@@ -1,5 +1,34 @@
-// TRUE COST — ui/comparison.js
-// Side-by-side vehicle comparison renderer.
+// TRUE COST - ui/comparison.js
+// Phase 2: Side-by-side comparison with Chart.js visualisations.
+
+const CHART_COLORS = {
+  depreciation:    '#8B6355',
+  fuel:            '#E8572A',
+  battery:         '#4A90D9',
+  registration:    '#2D5016',
+  insurance:       '#7FB069',
+  servicing:       '#D4A843',
+  tyres:           '#A0785A',
+  lostCapital:     '#6B7A8D',
+  financeInterest: '#C1666B',
+};
+
+const COST_CATEGORIES = [
+  { key: 'depreciation',    label: 'Depreciation' },
+  { key: 'fuel',            label: 'Fuel/Energy' },
+  { key: 'battery',         label: 'Battery' },
+  { key: 'registration',    label: 'Registration' },
+  { key: 'insurance',       label: 'Insurance' },
+  { key: 'servicing',       label: 'Servicing' },
+  { key: 'tyres',           label: 'Tyres' },
+  { key: 'lostCapital',     label: 'Lost Capital' },
+  { key: 'financeInterest', label: 'Finance' },
+];
+
+const _charts = {};
+function destroyChart(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
 
 const Comparison = {
   async render(settings) {
@@ -8,13 +37,13 @@ const Comparison = {
     if (!container) return;
 
     if (vehicles.length < 2) {
-      container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">📊</div>
-          <h2 class="empty-state-title">Add at least 2 vehicles</h2>
-          <p class="empty-state-desc">Compare up to 4 vehicles side-by-side across every cost category.</p>
-          <button class="btn btn-primary btn-pill" onclick="Router.navigate('vehicles')">Go to Vehicles</button>
-        </div>`;
+      ['stacked','total','perkm'].forEach(destroyChart);
+      container.innerHTML = '<div class="empty-state">'
+        + '<div class="empty-state-icon">\uD83D\uDCCA</div>'
+        + '<h2 class="empty-state-title">Add at least 2 vehicles</h2>'
+        + '<p class="empty-state-desc">Compare up to 4 vehicles side-by-side across every cost category.</p>'
+        + '<button class="btn btn-primary btn-pill" onclick="Router.navigate(\'vehicles\')">Go to Vehicles</button>'
+        + '</div>';
       return;
     }
 
@@ -25,69 +54,254 @@ const Comparison = {
       opportunityCostRate: s.opportunityCostRate || 4.5,
     };
 
-    const results = vehicles.map(v => ({
-      vehicle: v,
-      costs: calculateCosts(v, scenario),
-    }));
+    const results = vehicles.map(function(v) {
+      return { vehicle: v, costs: calculateCosts(v, scenario) };
+    });
 
     const count = Math.min(results.length, 4);
     const subset = results.slice(0, count);
-
-    // Find winner (lowest total cost)
-    const minCost = Math.min(...subset.map(r => r.costs.summary.totalOwnershipCost));
-
-    const costCategories = [
-      { key: 'depreciation', label: 'Depreciation' },
-      { key: 'fuel',         label: 'Fuel/Energy' },
-      { key: 'battery',      label: 'Battery' },
-      { key: 'registration', label: 'Registration' },
-      { key: 'insurance',    label: 'Insurance' },
-      { key: 'servicing',    label: 'Servicing' },
-      { key: 'tyres',        label: 'Tyres' },
-      { key: 'lostCapital',  label: 'Lost Capital' },
-      { key: 'financeInterest', label: 'Finance' },
-    ];
+    const minCost = Math.min.apply(null, subset.map(function(r) {
+      return r.costs.summary.totalOwnershipCost;
+    }));
 
     document.getElementById('compare-subtitle').textContent =
-      `${count} vehicles · ${scenario.years}yr / ${(scenario.kmPerYear/1000).toFixed(0)}k km/yr`;
+      count + ' vehicles \u00b7 ' + scenario.years + 'yr / '
+      + (scenario.kmPerYear / 1000).toFixed(0) + 'k km/yr';
 
-    container.innerHTML = `
-      <div class="compare-grid" data-count="${count}">
-        ${subset.map(r => {
-          const isWinner = r.costs.summary.totalOwnershipCost === minCost;
-          return `<div class="card" style="${isWinner ? 'border:2px solid var(--color-primary)' : ''}">
-            ${isWinner ? '<div class="badge badge-success" style="margin-bottom:var(--space-2)">Best Value</div>' : ''}
-            <div style="font-weight:var(--font-weight-bold);font-size:var(--font-size-sm);margin-bottom:var(--space-2)">${vehicleLabel(r.vehicle)}</div>
-            <span class="badge ${fuelBadgeClass(r.vehicle.fuelType)}">${fuelTypeLabel(r.vehicle.fuelType)}</span>
-            <div style="margin-top:var(--space-4);text-align:center">
-              <div style="font-size:var(--font-size-xl);font-weight:var(--font-weight-bold)">${fmtAUD(r.costs.summary.totalOwnershipCost)}</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-muted)">${scenario.years}yr total</div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>
+    const activeCategories = COST_CATEGORIES.filter(function(c) {
+      return subset.some(function(r) { return (r.costs.total[c.key] || 0) > 0; });
+    });
 
-      <div class="card" style="margin-top:var(--space-4)">
-        <h2 class="card-title">Cost Breakdown</h2>
-        ${costCategories.map(cat => {
-          const vals = subset.map(r => r.costs.total[cat.key] || 0);
-          const hasData = vals.some(v => v > 0);
-          if (!hasData) return '';
-          const minVal = Math.min(...vals);
-          return `
-            <div style="margin-bottom:var(--space-4)">
-              <div style="font-size:var(--font-size-sm);font-weight:var(--font-weight-semibold);
-                          color:var(--color-text-secondary);margin-bottom:var(--space-2)">${cat.label}</div>
-              <div class="compare-grid" data-count="${count}">
-                ${vals.map(val => `
-                  <div style="text-align:center;font-size:var(--font-size-sm);
-                               font-weight:${val===minVal?'var(--font-weight-bold)':'var(--font-weight-normal)'};
-                               color:${val===minVal?'var(--color-primary)':'var(--color-text)'}">
-                    ${fmtAUD(val)}
-                  </div>`).join('')}
-              </div>
-            </div>`;
-        }).join('')}
-      </div>`;
+    // Build HTML as string concatenation (no template literals to avoid encoding issues)
+    var html = '';
+
+    // Vehicle header cards
+    html += '<div class="compare-grid" data-count="' + count + '">';
+    subset.forEach(function(r) {
+      var isWinner = r.costs.summary.totalOwnershipCost === minCost;
+      html += '<div class="card"' + (isWinner ? ' style="border:2px solid var(--color-primary)"' : '') + '>';
+      if (isWinner) html += '<div class="badge badge-success" style="margin-bottom:8px">Best Value</div>';
+      html += '<div style="font-weight:700;font-size:13px;line-height:1.3;margin-bottom:8px">' + vehicleLabel(r.vehicle) + '</div>';
+      html += '<span class="badge ' + fuelBadgeClass(r.vehicle.fuelType) + '">' + fuelTypeLabel(r.vehicle.fuelType) + '</span>';
+      html += '<div style="margin-top:12px;text-align:center">';
+      html += '<div style="font-size:22px;font-weight:700;color:' + (isWinner ? 'var(--color-primary)' : 'var(--color-text)') + '">' + fmtAUD(r.costs.summary.totalOwnershipCost) + '</div>';
+      html += '<div style="font-size:11px;color:var(--color-text-muted)">' + scenario.years + 'yr total</div>';
+      html += '<div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">' + fmtPerKm(r.costs.summary.costPerKm) + '</div>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    // Chart tabs
+    html += '<div style="display:flex;gap:8px;margin:16px 0 12px">';
+    html += '<button class="btn btn-sm btn-pill chart-tab active" data-tab="stacked" style="background:var(--color-accent);color:#fff">Breakdown</button>';
+    html += '<button class="btn btn-sm btn-pill chart-tab" data-tab="total" style="background:var(--color-bg-input);color:var(--color-text)">Total</button>';
+    html += '<button class="btn btn-sm btn-pill chart-tab" data-tab="perkm" style="background:var(--color-bg-input);color:var(--color-text)">Per km</button>';
+    html += '</div>';
+
+    // Chart canvases
+    html += '<div class="card" style="padding:16px">';
+    html += '<div id="chart-stacked-wrap" style="position:relative;height:280px"><canvas id="chart-stacked"></canvas></div>';
+    html += '<div id="chart-total-wrap" class="hidden" style="position:relative;height:220px"><canvas id="chart-total"></canvas></div>';
+    html += '<div id="chart-perkm-wrap" class="hidden" style="position:relative;height:220px"><canvas id="chart-perkm"></canvas></div>';
+    html += '</div>';
+
+    // Legend
+    html += '<div style="display:flex;flex-wrap:wrap;gap:8px 16px;padding:8px 0 16px">';
+    activeCategories.forEach(function(c) {
+      html += '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)">';
+      html += '<span style="width:12px;height:12px;border-radius:3px;background:' + CHART_COLORS[c.key] + ';flex-shrink:0"></span>';
+      html += c.label + '</div>';
+    });
+    html += '</div>';
+
+    // Detailed breakdown table
+    html += '<div class="card"><h2 class="card-title">Category Breakdown</h2>';
+    COST_CATEGORIES.forEach(function(cat) {
+      var vals = subset.map(function(r) { return r.costs.total[cat.key] || 0; });
+      if (!vals.some(function(v) { return v > 0; })) return;
+      var maxVal = Math.max.apply(null, vals);
+      var minVal = Math.min.apply(null, vals.filter(function(v) { return v > 0; }));
+      html += '<div style="margin-bottom:20px">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
+      html += '<span style="width:10px;height:10px;border-radius:2px;background:' + CHART_COLORS[cat.key] + ';flex-shrink:0"></span>';
+      html += '<span style="font-size:13px;font-weight:600;color:var(--color-text-secondary)">' + cat.label + '</span></div>';
+      html += '<div class="compare-grid" data-count="' + count + '">';
+      vals.forEach(function(val) {
+        var pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+        var isBest = val === minVal && val > 0;
+        html += '<div>';
+        html += '<div style="font-size:13px;font-weight:' + (isBest ? '700' : '400') + ';color:' + (isBest ? 'var(--color-primary)' : 'var(--color-text)') + '">' + fmtAUD(val) + '</div>';
+        html += '<div style="height:4px;border-radius:2px;background:var(--color-border);margin-top:4px;overflow:hidden">';
+        html += '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + (isBest ? 'var(--color-primary)' : CHART_COLORS[cat.key]) + ';border-radius:2px"></div>';
+        html += '</div></div>';
+      });
+      html += '</div></div>';
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+
+    // Wire tab buttons
+    container.querySelectorAll('.chart-tab').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        container.querySelectorAll('.chart-tab').forEach(function(b) {
+          b.style.background = 'var(--color-bg-input)';
+          b.style.color = 'var(--color-text)';
+        });
+        btn.style.background = 'var(--color-accent)';
+        btn.style.color = '#fff';
+        ['stacked','total','perkm'].forEach(function(tab) {
+          var el = document.getElementById('chart-' + tab + '-wrap');
+          if (el) el.classList.toggle('hidden', tab !== btn.dataset.tab);
+        });
+      });
+    });
+
+    requestAnimationFrame(function() {
+      Comparison.renderCharts(subset, scenario, activeCategories);
+    });
+  },
+
+  renderCharts: function(subset, scenario, activeCategories) {
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js not loaded - charts unavailable');
+      return;
+    }
+
+    Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = '#6B6B6B';
+
+    var labels = subset.map(function(r) { return vehicleLabel(r.vehicle); });
+
+    // Stacked bar: cost breakdown per vehicle
+    destroyChart('stacked');
+    var stackedCtx = document.getElementById('chart-stacked');
+    if (stackedCtx) {
+      _charts['stacked'] = new Chart(stackedCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: activeCategories.map(function(cat) {
+            return {
+              label: cat.label,
+              data: subset.map(function(r) { return Math.round(r.costs.total[cat.key] || 0); }),
+              backgroundColor: CHART_COLORS[cat.key],
+              borderWidth: 0,
+            };
+          }),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-AU');
+                },
+              },
+            },
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+              stacked: true,
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: {
+                callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // Horizontal bar: total cost
+    destroyChart('total');
+    var totalCtx = document.getElementById('chart-total');
+    if (totalCtx) {
+      var totals = subset.map(function(r) {
+        return Math.round(r.costs.summary.totalOwnershipCost);
+      });
+      var minTotal = Math.min.apply(null, totals);
+      _charts['total'] = new Chart(totalCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Total cost',
+            data: totals,
+            backgroundColor: totals.map(function(v) { return v === minTotal ? '#2D5016' : '#E8572A'; }),
+            borderWidth: 0,
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return ' $' + ctx.parsed.x.toLocaleString('en-AU'); },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } },
+            },
+            y: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    // Horizontal bar: per km
+    destroyChart('perkm');
+    var perkmCtx = document.getElementById('chart-perkm');
+    if (perkmCtx) {
+      var perKms = subset.map(function(r) {
+        return parseFloat((r.costs.summary.costPerKm * 100).toFixed(2));
+      });
+      var minPerKm = Math.min.apply(null, perKms);
+      _charts['perkm'] = new Chart(perkmCtx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Cost per km',
+            data: perKms,
+            backgroundColor: perKms.map(function(v) { return v === minPerKm ? '#2D5016' : '#7FB069'; }),
+            borderWidth: 0,
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return ' ' + ctx.parsed.x.toFixed(1) + 'c/km'; },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { callback: function(v) { return v + 'c'; } },
+            },
+            y: { grid: { display: false } },
+          },
+        },
+      });
+    }
   },
 };
