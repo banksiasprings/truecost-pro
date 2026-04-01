@@ -1,34 +1,34 @@
 /**
  * import.js — Vehicle import helpers for TrueCost
  */
-
 var VehicleImport = (function () {
 
   function fromUrlParams() {
     var p = new URLSearchParams(location.search);
     if (!p.get('import')) return null;
     return {
-      src:   p.get('src')   || 'url',
-      url:   p.get('url')   || '',
-      name:  p.get('name')  || '',
-      make:  p.get('make')  || '',
-      model: p.get('model') || '',
-      year:  p.get('year')  ? parseInt(p.get('year'), 10)   : null,
-      price: p.get('price') ? parseFloat(p.get('price'))    : null,
-      fuel:  _normaliseFuel(p.get('fuel') || ''),
-      trans: p.get('trans') || '',
-      body:  p.get('body')  || '',
-      cond:  p.get('cond')  || 'used',
-      odo:   p.get('odo')   ? parseInt(p.get('odo'), 10)    : null,
-      fc:    p.get('fc')    ? parseFloat(p.get('fc'))       : null,
-      battery: p.get('battery') ? parseFloat(p.get('battery')) : null,
-      range:   p.get('range')   ? parseInt(p.get('range'), 10) : null,
-      engine:  p.get('engine')  || '',
-      drive:   p.get('drive')   || '',
-      ancap:   p.get('ancap')   ? parseInt(p.get('ancap'), 10) : null,
-      colour:  p.get('colour')  || '',
-      seats:   p.get('seats')   ? parseInt(p.get('seats'), 10) : null,
-      doors:   p.get('doors')   ? parseInt(p.get('doors'), 10) : null,
+      src:       p.get('src')       || 'url',
+      url:       p.get('url')       || '',
+      name:      p.get('name')      || '',
+      make:      p.get('make')      || '',
+      model:     p.get('model')     || '',
+      year:      p.get('year')      ? parseInt(p.get('year'), 10)    : null,
+      price:     p.get('price')     ? parseFloat(p.get('price'))     : null,
+      fuel:      _normaliseFuel(p.get('fuel') || ''),
+      trans:     p.get('trans')     || '',
+      body:      p.get('body')      || '',
+      cond:      p.get('cond')      || 'used',
+      odo:       p.get('odo')       ? parseInt(p.get('odo'), 10)     : null,
+      fc:        p.get('fc')        ? parseFloat(p.get('fc'))        : null,
+      drive:     p.get('drive')     || '',
+      doors:     p.get('doors')     ? parseInt(p.get('doors'), 10)   : null,
+      seats:     p.get('seats')     ? parseInt(p.get('seats'), 10)   : null,
+      colour:    p.get('colour')    || '',
+      engine:    p.get('engine')    || '',
+      cylinders: p.get('cylinders') || '',
+      battery:   p.get('battery')   ? parseFloat(p.get('battery'))  : null,
+      range:     p.get('range')     ? parseInt(p.get('range'), 10)   : null,
+      ancap:     p.get('ancap')     ? parseInt(p.get('ancap'), 10)   : null,
     };
   }
 
@@ -66,44 +66,57 @@ var VehicleImport = (function () {
 
     if (/\bautomatic\b/i.test(text)) d.trans = 'Automatic';
     else if (/\bmanual\b/i.test(text)) d.trans = 'Manual';
-    var bat = text.match(/([\d.]+)\\s*kWh\\R/k);
-    if (bat) d.battery = parseFloat(bat[1]);
-    var rng = text.match(/[Rr]ange[^0-9]{0,15}([\d,]+)\\s*km/i) || text.match(/([\d,]+)\\s*km\\s*(?:WLTP|NEDC|range)/i);
-    if (rng) d.range = parseInt(rng[1].replace(/,/g, ''), 10);
-    var eng = text.match(/(\\d\\.\\d)\\s*[Ll](?:itre|iter)?\\b/i);
-    if (eng) d.engine = parseFloat(eng[1]);
-    var drv = text.match(/\\b(AWD|4WD|FWD|RWD|4x4)\\b/i);
-    if (drv) d.drive = drv[1].toUpperCase();
-    var anc = text.match("/(\\d)\\s*[Ss]tar \\ANCAP/i);
-    if (anc) d.ancap = parseInt(anc[1], 10);
-    var col = text.match(/\\b(black|white|silver|grey|gray|red|blue|green|yellow|brown|beige|gold)\\b/i);
-    if (col) d.colour = col[1];
-    var seats = text.match(/\\b(\\d)\\s*(?:seat|seater|seats)\\b/i);
-    if (seats) d.seats = parseInt(seats[1], 10);
-    var doors = text.match("/\\b(\\d)\\s*(?:door|doors)\\b/i");
-    if (doors) d.doors = parseInt(doors[1], 10);
+
+    var driveMatch = text.match(/\b(FWD|RWD|AWD|4WD|4x4|all[\s-]wheel drive|front[\s-]wheel drive|rear[\s-]wheel drive)\b/i);
+    if (driveMatch) d.drive = _normaliseDrive(driveMatch[1]);
+
+    var doorsMatch = text.match(/\b(\d)\s*[Dd]oor/);
+    if (doorsMatch) d.doors = parseInt(doorsMatch[1], 10);
+
+    var seatsMatch = text.match(/\b(\d)\s*[Ss]eat/);
+    if (seatsMatch) d.seats = parseInt(seatsMatch[1], 10);
+
+    var colourMatch = text.match(/[Cc]olou?r[\s:]+([A-Za-z][A-Za-z\s]{1,25}?)(?:\n|,|\.|$)/);
+    if (colourMatch) d.colour = colourMatch[1].trim();
+
+    var engineMatch = text.match(/\b(\d+\.\d+)\s*[Ll]\b/);
+    if (engineMatch) d.engine = engineMatch[1] + 'L';
+
+    var cylMatch = text.match(/\b([Vv]8|[Vv]6|[Vv]12|[Ii]4|[Ii]6|\d+[\s-][Cc]ylinder[s]?)\b/);
+    if (cylMatch) d.cylinders = cylMatch[1];
+
+    var battMatch = text.match(/[Bb]attery[\s\S]{0,30}?([\d.]+)\s*[Kk][Ww][Hh]/);
+    if (battMatch) d.battery = parseFloat(battMatch[1]);
+
+    var rangeMatch = text.match(/(?:[Rr]ange|WLTP(?:\s+[Rr]ange)?)[\s\S]{0,30}?(\d{2,4})\s*km/);
+    if (rangeMatch) d.range = parseInt(rangeMatch[1], 10);
+
+    var ancapMatch = text.match(/ANCAP[\s\S]{0,30}?(\d)[\s-]*(?:star|\/5)/i);
+    if (!ancapMatch) ancapMatch = text.match(/(\d)[\s-]*[Ss]tar\s+ANCAP/i);
+    if (ancapMatch) d.ancap = parseInt(ancapMatch[1], 10);
 
     return (d.make || d.price || d.odo) ? d : null;
   }
 
   function applyToVehicle(data, vehicle) {
     if (!data || !vehicle) return vehicle;
-    if (data.make)  vehicle.make  = data.make;
-    if (data.model) vehicle.model = data.model;
-    if (data.year)  vehicle.year  = data.year;
-    if (data.price) vehicle.purchasePrice = data.price;
-    if (data.fuel)  vehicle.fuelType = data.fuel;
-    if (data.odo)   vehicle.purchaseOdometer = data.odo;
-    if (data.fc)    vehicle.fuelConsumption = data.fc;
-    if (data.name)  vehicle.nickname = data.name;
-    if (data.battery) vehicle.evBatteryKwh = data.battery;
-    if (data.range)   vehicle.evRangeKm = data.range;
-    if (data.engine)  vehicle.engineSize = data.engine;
-    if (data.drive)   vehicle.driveType = data.drive;
-    if (data.ancap)   vehicle.ancap = data.ancap;
-    if (data.colour)  vehicle.colour = data.colour;
-    if (data.seats)   vehicle.seats = data.seats;
-    if (data.doors)   vehicle.doors = data.doors;
+    if (data.make)      vehicle.make             = data.make;
+    if (data.model)     vehicle.model            = data.model;
+    if (data.year)      vehicle.year             = data.year;
+    if (data.price)     vehicle.purchasePrice    = data.price;
+    if (data.fuel)      vehicle.fuelType         = data.fuel;
+    if (data.odo)       vehicle.purchaseOdometer = data.odo;
+    if (data.fc)        vehicle.fuelConsumption  = data.fc;
+    if (data.name)      vehicle.nickname         = data.name;
+    if (data.drive)     vehicle.driveType        = data.drive;
+    if (data.doors)     vehicle.doors            = data.doors;
+    if (data.seats)     vehicle.seats            = data.seats;
+    if (data.colour)    vehicle.colour           = data.colour;
+    if (data.engine)    vehicle.engineSize       = data.engine;
+    if (data.cylinders) vehicle.cylinders        = data.cylinders;
+    if (data.battery)   vehicle.evBatteryKwh     = data.battery;
+    if (data.range)     vehicle.evRangeKm        = data.range;
+    if (data.ancap)     vehicle.ancap            = data.ancap;
     return vehicle;
   }
 
@@ -220,8 +233,48 @@ var VehicleImport = (function () {
       '</button>' +
     '</div>';
   }
-    function _bookmarkletCode() {
-    return 'javascript:(function(){var d=null;[].forEach.call(document.querySelectorAll(\'script[type="application/ld+json"]\'),function(s){try{var p=JSON.parse(s.textContent);if(p[\'@type\']&&[].concat(p[\'@type\']).indexOf(\'Vehicle\')>-1)d=p;}catch(e){}});if(!d){alert(\'Please open a Carsales car listing first, then tap Add to TrueCost.\');return;}var t=document.body.innerText;var km=t.match(/Odometer[\\s\\S]{0,15}?([\\d,]+)\\s*km/i);var fc=t.match(/([\\d.]+)\\s*L\\/100km/i);var q=[];function a(k,v){if(v)q.push(encodeURIComponent(k)+\'=\'+encodeURIComponent(v));}a(\'import\',1);a(\'src\',\'carsales\');a(\'url\',location.href);a(\'name\',d.name);a(\'make\',d.brand&&d.brand.name);a(\'model\',d.model);a(\'year\',d.vehicleModelDate);a(\'price\',d.offers&&d.offers.price);a(\'fuel\',(d.fuelType||"").toLowerCase());a(\'trans\',d.vehicleTransmission);a(\'body\',d.bodyType);a(\'cond\',d.itemCondition&&d.itemCondition.indexOf(\'Used\')>-1?\'used\':\'new\');a(\'odo\',km?km[1].replace(/,/g,""):"");a(\'fc\',fc?fc[1]:"");var bat=t.match(/([\.d]+)\s*kWh\b/i);var rng=t.match(/[Rr]ange[^0-9]{0,15}([\d,]+)\s*km/i)||t.match(/([\d,]+)\s*km\s*(?:WLTP|NEDC|range)/i);var eng=t.match(/(\d\.\d)\s*[Ll](?:itre|iter)?\b/);var drv=t.match(/\b(AWD|4WD|FWD|RWD|4x4)\b/i);var anc=t.match(/(\d)\s*[Ss]tar\s*ANCAP/i);a(\'battery\',bat?bat[1]:\'\');a(\'range\',rng?rng[1].replace(/,/g,\'\'):\'\');a(\'engine\',eng?eng[1]:(d.vehicleEngine&&d.vehicleEngine.engineDisplacement?d.vehicleEngine.engineDisplacement:\'\'));a(\'drive\',drv?drv[1].toUpperCase():(d.driveWheelConfiguration||\'\'));a(\'ancap\',anc?anc[1]:\'\');a(\'colour\',d.color||\'\');a(\'seats\',d.vehicleSeatingCapacity||\'\');a(\'doors\',d.numberOfDoors||\'\');window.open(\'https://banksiasprings.github.io/truecost/?\'+q.join(\'&\'),\'truecost\',\'width=430,height=850,left=900,top=50,resizable=yes,scrollbars=yes\');})();';
+
+  function _bookmarkletCode() {
+    // Minified bookmarklet — captures all available fields from Carsales JSON-LD + page text
+    return 'javascript:(function(){' +
+      'var d=null;' +
+      '[].forEach.call(document.querySelectorAll(\'script[type="application/ld+json"]\'),function(s){' +
+        'try{var p=JSON.parse(s.textContent);if(p[\'@type\']&&[].concat(p[\'@type\']).indexOf(\'Vehicle\')>-1)d=p;}catch(e){}' +
+      '});' +
+      'if(!d){alert(\'Please open a Carsales car listing first, then tap Add to TrueCost.\');return;}' +
+      'var t=document.body.innerText;' +
+      'var km=t.match(/Odometer[\\s\\S]{0,15}?([\\d,]+)\\s*km/i);' +
+      'var fc=t.match(/([\\d.]+)\\s*L\\/100km/i);' +
+      'var batt=t.match(/[Bb]attery[\\s\\S]{0,30}?([\\d.]+)\\s*[Kk][Ww][Hh]/);' +
+      'var rng=t.match(/(?:[Rr]ange|WLTP)[\\s\\S]{0,30}?(\\d{2,4})\\s*km/);' +
+      'var ancap=t.match(/ANCAP[\\s\\S]{0,30}?(\\d)[\\s-]*(?:star|\\/5)/i)||t.match(/(\\d)[\\s-]*[Ss]tar\\s+ANCAP/i);' +
+      'var q=[];' +
+      'function a(k,v){if(v!=null&&v!=="")q.push(encodeURIComponent(k)+"="+encodeURIComponent(v));}' +
+      'a("import",1);' +
+      'a("src","carsales");' +
+      'a("url",location.href);' +
+      'a("name",d.name);' +
+      'a("make",d.brand&&d.brand.name);' +
+      'a("model",d.model);' +
+      'a("year",d.vehicleModelDate);' +
+      'a("price",d.offers&&d.offers.price);' +
+      'a("fuel",(d.fuelType||"").toLowerCase());' +
+      'a("trans",d.vehicleTransmission);' +
+      'a("body",d.bodyType);' +
+      'a("cond",d.itemCondition&&d.itemCondition.indexOf("Used")>-1?"used":"new");' +
+      'a("odo",km?km[1].replace(/,/g,""):"");' +
+      'a("fc",fc?fc[1]:"");' +
+      'a("drive",d.driveWheelConfiguration||"");' +
+      'a("doors",d.numberOfDoors||"");' +
+      'a("seats",d.vehicleSeatingCapacity||"");' +
+      'a("colour",d.color||"");' +
+      'a("engine",d.vehicleEngine&&d.vehicleEngine.engineDisplacement?(d.vehicleEngine.engineDisplacement.value+"L"):"");' +
+      'a("cylinders",d.vehicleEngine&&d.vehicleEngine.engineType||"");' +
+      'a("battery",batt?batt[1]:"");' +
+      'a("range",rng?rng[1]:"");' +
+      'a("ancap",ancap?ancap[1]:"");' +
+      'window.open("https://banksiasprings.github.io/truecost/?"+q.join("&"),"truecost","width=430,height=850,left=900,top=50,resizable=yes,scrollbars=yes");' +
+    '})();';
   }
 
   function _normaliseFuel(s) {
@@ -233,6 +286,15 @@ var VehicleImport = (function () {
     if (s.indexOf('hybrid')   > -1) return 'hybrid';
     if (s.indexOf('lpg')      > -1) return 'lpg';
     return 'petrol';
+  }
+
+  function _normaliseDrive(s) {
+    s = (s || '').toLowerCase().trim();
+    if (s === 'fwd' || s.indexOf('front') > -1) return 'FWD';
+    if (s === 'rwd' || s.indexOf('rear') > -1)  return 'RWD';
+    if (s === 'awd' || s.indexOf('all') > -1)   return 'AWD';
+    if (s.indexOf('4') > -1)                    return '4WD';
+    return s.toUpperCase();
   }
 
   function _titleCase(s) {
@@ -248,5 +310,4 @@ var VehicleImport = (function () {
     renderPasteScreen:       renderPasteScreen,
     renderBookmarkletScreen: renderBookmarkletScreen,
   };
-
 })();
