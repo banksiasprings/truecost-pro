@@ -47,7 +47,7 @@ var VehicleImport = (function () {
 
 
   function fromProxyUrl(url, onSuccess, onError) {
-    var PROXY = "https://truecost-proxy.openclaw.workers.dev";
+    var PROXY = "https://truecost-proxy.smcnichol.workers.dev";
     fetch(PROXY + "?url=" + encodeURIComponent(url))
       .then(function(r) { return r.json(); })
       .then(function(d) {
