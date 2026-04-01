@@ -43,6 +43,20 @@ const App = {
       this.loadRatesUI();
       App.toast("Official rates updated — your customisations preserved", "success");
     });
+    document.getElementById("btn-save-all-rates")?.addEventListener("click", async () => {
+      const pending = document.querySelectorAll(".rate-input.editing");
+      if (pending.length === 0) { App.toast("All rates already saved", "default", 1500); return; }
+      for (const inp of pending) {
+        const val = parseFloat(inp.value);
+        if (!isNaN(val)) {
+          await RatesManager.setOverride(inp.dataset.ratePath, val);
+          inp.classList.remove("editing");
+          inp.classList.add("overridden", "saved");
+          setTimeout(() => inp.classList.remove("saved"), 2000);
+        }
+      }
+      App.toast("Changes saved", "success");
+    });
     document.getElementById("btn-reset-all-rates")?.addEventListener("click", async () => {
       await RatesManager.resetAllOverrides();
       this.loadRatesUI();
@@ -137,12 +151,20 @@ const App = {
 
     // Wire change handlers for all rate inputs
     document.querySelectorAll(".rate-input").forEach(inp => {
+      // Go red while editing (user is typing)
+      inp.addEventListener("input", () => {
+        inp.classList.add("editing");
+        inp.classList.remove("saved");
+      });
+      // Auto-save on blur / Enter — go green briefly then fade back
       inp.addEventListener("change", async () => {
         const path = inp.dataset.ratePath;
         const val  = parseFloat(inp.value);
         if (!isNaN(val)) {
           await RatesManager.setOverride(path, val);
-          inp.classList.add("overridden");
+          inp.classList.remove("editing");
+          inp.classList.add("overridden", "saved");
+          setTimeout(() => inp.classList.remove("saved"), 2000);
           App.toast("Rate saved", "success", 1500);
         }
       });
