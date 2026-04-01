@@ -276,3 +276,12 @@
 .toast.success { background: var(--color-success); }
 .toast.error { background: var(--color-error); }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ── Rates & Costs panel ── */
+.rates-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.rate-row { display: grid; grid-template-columns: 1fr 90px 32px; align-items: center; gap: var(--space-2); }
+.rate-row label { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
+.rate-row input[type=number] { font-size: var(--font-size-sm); padding: 6px 8px; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text); width: 100%; text-align: right; }
+.rate-row input[type=number].overridden { border-color: var(--color-accent); }
+.btn-rate-reset { background: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 4px 6px; font-size: 14px; cursor: pointer; color: var(--color-text-muted); line-height: 1; }
+.btn-rate-reset:hover { border-color: var(--color-accent); color: var(--color-accent); }

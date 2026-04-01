@@ -1,0 +1,46 @@
+name: Update Fuel Rates
+
+on:
+  schedule:
+    # Run every Monday at 02:00 UTC (noon AEST)
+    - cron: '0 2 * * 1'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-rates:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+
+      - name: Run rates update script
+        run: python scripts/update-rates.py
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet src/data/rates.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push updated rates
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add src/data/rates.json
+          git commit -m "chore: auto-update fuel rates [skip ci]"
+          git push

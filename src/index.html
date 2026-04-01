@@ -92,6 +92,7 @@
         <h1 class="page-title">Settings</h1>
       </div>
 
+
       <div class="card">
         <h2 class="card-title">Scenario Defaults</h2>
 
@@ -145,7 +146,23 @@
         <button class="btn btn-primary btn-full btn-pill mt-4" id="btn-save-settings">Save Settings</button>
       </div>
 
+
       <div class="card">
+      <div class="card" id="card-rates">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);margin-bottom:var(--space-4)">
+          <h2 class="card-title" style="margin-bottom:0">Rates &amp; Costs</h2>
+          <button class="btn btn-secondary" id="btn-refresh-rates" style="font-size:var(--font-size-xs);padding:4px 10px">&#8635; Refresh</button>
+        </div>
+        <p id="rates-meta" style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:var(--space-4)">Loading rates...</p>
+
+        <h3 style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary);margin-bottom:var(--space-3)">Fuel Prices</h3>
+        <div class="rates-grid" id="rates-fuel-grid"></div>
+
+        <h3 style="font-size:var(--font-size-sm);font-weight:600;color:var(--color-text-secondary);margin-top:var(--space-5);margin-bottom:var(--space-3)">Annual Registration (est. incl. CTP)</h3>
+        <div class="rates-grid" id="rates-rego-grid"></div>
+
+        <button class="btn btn-secondary btn-full" id="btn-reset-all-rates" style="margin-top:var(--space-5)">Reset all to official rates</button>
+      </div>
         <h2 class="card-title">About</h2>
         <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);line-height:var(--line-height-relaxed)">
           TRUE COST calculates every dimension of vehicle ownership cost over your chosen period —
@@ -198,6 +215,7 @@
 <script src="js/data/defaults.js"></script>
 <script src="js/data/model.js"></script>
 <script src="js/data/storage.js"></script>
+<script src="js/data/rates-manager.js"></script>
 <script src="js/calc/depreciation.js"></script>
 <script src="js/calc/fuel.js"></script>
 <script src="js/calc/battery.js"></script>

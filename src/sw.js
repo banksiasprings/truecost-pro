@@ -1,6 +1,6 @@
 // TRUE COST — Service Worker
 // Cache version: bump this string to force all clients to refresh
-const CACHE_NAME = 'truecost-v2';
+const CACHE_NAME = 'truecost-v3';
 
 const PRECACHE_URLS = [
   '/',
@@ -22,7 +22,9 @@ const PRECACHE_URLS = [
   '/js/ui/router.js',
   '/js/ui/forms.js',
   '/js/ui/vehicle-card.js',
+  '/js/data/rates-manager.js',
   '/js/ui/comparison.js',
+  '/data/rates.json',
   '/manifest.json',
 ];
 
@@ -55,6 +57,22 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (url.origin !== self.location.origin &&
       !url.hostname.includes('api.redbook')) return;
+
+  // Network-first for rates.json (always want fresh pricing data)
+  if (url.pathname.includes('rates.json')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   // Network-first for API endpoints
   if (url.pathname.startsWith('/api/')) {
