@@ -1,6 +1,5 @@
 // TRUE COST - ui/comparison.js
-// Phase 2: Side-by-side comparison with Chart.js visualisations.
-
+// Phase 5: Year-by-year cumulative cost line chart + table added.
 const CHART_COLORS = {
   depreciation:    '#8B6355',
   fuel:            '#E8572A',
@@ -12,6 +11,9 @@ const CHART_COLORS = {
   lostCapital:     '#6B7A8D',
   financeInterest: '#C1666B',
 };
+
+// Per-vehicle line colours for the Yearly chart
+const LINE_COLORS = ['#E8572A', '#2D5016', '#4A90D9', '#D4A843'];
 
 const COST_CATEGORIES = [
   { key: 'depreciation',    label: 'Depreciation' },
@@ -37,7 +39,7 @@ const Comparison = {
     if (!container) return;
 
     if (vehicles.length < 2) {
-      ['stacked','total','perkm'].forEach(destroyChart);
+      ['stacked','total','perkm','yearly'].forEach(destroyChart);
       container.innerHTML = '<div class="empty-state">'
         + '<div class="empty-state-icon">\uD83D\uDCCA</div>'
         + '<h2 class="empty-state-title">Add at least 2 vehicles</h2>'
@@ -60,6 +62,7 @@ const Comparison = {
 
     const count = Math.min(results.length, 4);
     const subset = results.slice(0, count);
+
     const minCost = Math.min.apply(null, subset.map(function(r) {
       return r.costs.summary.totalOwnershipCost;
     }));
@@ -72,7 +75,22 @@ const Comparison = {
       return subset.some(function(r) { return (r.costs.total[c.key] || 0) > 0; });
     });
 
-    // Build HTML as string concatenation (no template literals to avoid encoding issues)
+    // Precompute year-by-year cumulative costs for the Yearly tab
+    var yearRange = [];
+    for (var yr = 1; yr <= scenario.years; yr++) yearRange.push(yr);
+    var yearlyData = subset.map(function(r) {
+      return {
+        vehicle: r.vehicle,
+        byYear: yearRange.map(function(y) {
+          return calculateCosts(r.vehicle, {
+            years: y,
+            kmPerYear: scenario.kmPerYear,
+            opportunityCostRate: scenario.opportunityCostRate,
+          }).summary.totalOwnershipCost;
+        }),
+      };
+    });
+
     var html = '';
 
     // Vehicle header cards
@@ -91,11 +109,12 @@ const Comparison = {
     });
     html += '</div>';
 
-    // Chart tabs
-    html += '<div style="display:flex;gap:8px;margin:16px 0 12px">';
+    // Chart tabs (4 tabs now)
+    html += '<div style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap">';
     html += '<button class="btn btn-sm btn-pill chart-tab active" data-tab="stacked" style="background:var(--color-accent);color:#fff">Breakdown</button>';
     html += '<button class="btn btn-sm btn-pill chart-tab" data-tab="total" style="background:var(--color-bg-input);color:var(--color-text)">Total</button>';
     html += '<button class="btn btn-sm btn-pill chart-tab" data-tab="perkm" style="background:var(--color-bg-input);color:var(--color-text)">Per km</button>';
+    html += '<button class="btn btn-sm btn-pill chart-tab" data-tab="yearly" style="background:var(--color-bg-input);color:var(--color-text)">Yearly \u2197</button>';
     html += '</div>';
 
     // Chart canvases
@@ -103,9 +122,10 @@ const Comparison = {
     html += '<div id="chart-stacked-wrap" style="position:relative;height:280px"><canvas id="chart-stacked"></canvas></div>';
     html += '<div id="chart-total-wrap" class="hidden" style="position:relative;height:220px"><canvas id="chart-total"></canvas></div>';
     html += '<div id="chart-perkm-wrap" class="hidden" style="position:relative;height:220px"><canvas id="chart-perkm"></canvas></div>';
+    html += '<div id="chart-yearly-wrap" class="hidden" style="position:relative;height:280px"><canvas id="chart-yearly"></canvas></div>';
     html += '</div>';
 
-    // Legend
+    // Legend (for stacked chart)
     html += '<div style="display:flex;flex-wrap:wrap;gap:8px 16px;padding:8px 0 16px">';
     activeCategories.forEach(function(c) {
       html += '<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-text-secondary)">';
@@ -114,7 +134,44 @@ const Comparison = {
     });
     html += '</div>';
 
-    // Detailed breakdown table
+    // Year-by-year cumulative cost table
+    html += '<div class="card"><h2 class="card-title">Year-by-Year Cumulative Cost</h2>';
+    html += '<div style="overflow-x:auto">';
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html += '<thead><tr>';
+    html += '<th style="text-align:left;padding:8px 6px;border-bottom:2px solid var(--color-border);color:var(--color-text-muted);font-weight:600;white-space:nowrap">Year</th>';
+    subset.forEach(function(r, idx) {
+      html += '<th style="text-align:right;padding:8px 6px;border-bottom:2px solid var(--color-border);font-weight:700;color:' + LINE_COLORS[idx % LINE_COLORS.length] + '">';
+      html += r.vehicle.make + ' ' + r.vehicle.model;
+      html += '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    yearRange.forEach(function(y, i) {
+      var rowVals = yearlyData.map(function(d) { return d.byYear[i]; });
+      var minVal = Math.min.apply(null, rowVals);
+      var isLast = y === scenario.years;
+      html += '<tr>';
+      html += '<td style="padding:8px 6px;border-bottom:1px solid var(--color-border);color:var(--color-text-muted);font-weight:' + (isLast ? '700' : '400') + '">' + y + 'yr</td>';
+      rowVals.forEach(function(val, vi) {
+        var isBest = val === minVal;
+        var style = 'text-align:right;padding:8px 6px;border-bottom:1px solid var(--color-border);';
+        style += 'font-weight:' + (isBest ? '700' : isLast ? '600' : '400') + ';';
+        style += 'color:' + (isBest ? 'var(--color-primary)' : 'var(--color-text)') + ';';
+        html += '<td style="' + style + '">' + fmtAUD(Math.round(val)) + (isBest ? ' \u2713' : '') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    // Savings callout
+    var finalVals = yearlyData.map(function(d) { return d.byYear[scenario.years - 1]; });
+    var sortedFinal = finalVals.slice().sort(function(a,b){return a-b;});
+    if (sortedFinal.length >= 2) {
+      var saving = Math.round(sortedFinal[sortedFinal.length - 1] - sortedFinal[0]);
+      html += '<p style="margin-top:12px;font-size:12px;color:var(--color-text-muted)">Best value saves <strong>' + fmtAUD(saving) + '</strong> over ' + scenario.years + ' years vs the most expensive option.</p>';
+    }
+    html += '</div></div>';
+
+    // Detailed category breakdown table
     html += '<div class="card"><h2 class="card-title">Category Breakdown</h2>';
     COST_CATEGORIES.forEach(function(cat) {
       var vals = subset.map(function(r) { return r.costs.total[cat.key] || 0; });
@@ -141,16 +198,18 @@ const Comparison = {
 
     container.innerHTML = html;
 
-    // Wire tab buttons
+    // Wire tab buttons (now includes 'yearly')
     container.querySelectorAll('.chart-tab').forEach(function(btn) {
       btn.addEventListener('click', function() {
         container.querySelectorAll('.chart-tab').forEach(function(b) {
           b.style.background = 'var(--color-bg-input)';
           b.style.color = 'var(--color-text)';
+          b.classList.remove('active');
         });
         btn.style.background = 'var(--color-accent)';
         btn.style.color = '#fff';
-        ['stacked','total','perkm'].forEach(function(tab) {
+        btn.classList.add('active');
+        ['stacked','total','perkm','yearly'].forEach(function(tab) {
           var el = document.getElementById('chart-' + tab + '-wrap');
           if (el) el.classList.toggle('hidden', tab !== btn.dataset.tab);
         });
@@ -158,16 +217,15 @@ const Comparison = {
     });
 
     requestAnimationFrame(function() {
-      Comparison.renderCharts(subset, scenario, activeCategories);
+      Comparison.renderCharts(subset, scenario, activeCategories, yearlyData, yearRange);
     });
   },
 
-  renderCharts: function(subset, scenario, activeCategories) {
+  renderCharts: function(subset, scenario, activeCategories, yearlyData, yearRange) {
     if (typeof Chart === 'undefined') {
       console.warn('Chart.js not loaded - charts unavailable');
       return;
     }
-
     Chart.defaults.font.family = 'system-ui, -apple-system, sans-serif';
     Chart.defaults.font.size = 11;
     Chart.defaults.color = '#6B6B6B';
@@ -209,9 +267,7 @@ const Comparison = {
             y: {
               stacked: true,
               grid: { color: 'rgba(0,0,0,0.05)' },
-              ticks: {
-                callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; },
-              },
+              ticks: { callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } },
             },
           },
         },
@@ -222,9 +278,7 @@ const Comparison = {
     destroyChart('total');
     var totalCtx = document.getElementById('chart-total');
     if (totalCtx) {
-      var totals = subset.map(function(r) {
-        return Math.round(r.costs.summary.totalOwnershipCost);
-      });
+      var totals = subset.map(function(r) { return Math.round(r.costs.summary.totalOwnershipCost); });
       var minTotal = Math.min.apply(null, totals);
       _charts['total'] = new Chart(totalCtx, {
         type: 'bar',
@@ -299,6 +353,59 @@ const Comparison = {
               ticks: { callback: function(v) { return v + 'c'; } },
             },
             y: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    // Line chart: cumulative cost by year
+    destroyChart('yearly');
+    var yearlyCtx = document.getElementById('chart-yearly');
+    if (yearlyCtx && yearlyData && yearRange) {
+      var yearLabels = yearRange.map(function(y) { return 'Yr ' + y; });
+      _charts['yearly'] = new Chart(yearlyCtx, {
+        type: 'line',
+        data: {
+          labels: yearLabels,
+          datasets: yearlyData.map(function(d, idx) {
+            var col = LINE_COLORS[idx % LINE_COLORS.length];
+            return {
+              label: vehicleLabel(d.vehicle),
+              data: d.byYear.map(function(v) { return Math.round(v); }),
+              borderColor: col,
+              backgroundColor: col + '18',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.35,
+              fill: false,
+            };
+          }),
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'bottom',
+              labels: { boxWidth: 14, padding: 12, font: { size: 11 } },
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-AU');
+                },
+              },
+            },
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: {
+              grid: { color: 'rgba(0,0,0,0.05)' },
+              ticks: { callback: function(v) { return '$' + (v / 1000).toFixed(0) + 'k'; } },
+            },
           },
         },
       });
