@@ -116,6 +116,7 @@ var VehicleImport = (function () {
 
   function renderBookmarkletScreen() {
     var code = _bookmarkletCode();
+    var hrefCode = code.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
     return '<div class="import-bookmarklet">' +
       '<h3 style="margin-bottom:var(--space-3)">Quick-Import Bookmark</h3>' +
       '<p style="color:var(--color-text-muted);margin-bottom:var(--space-2);font-size:var(--font-size-sm)">' +
@@ -124,7 +125,7 @@ var VehicleImport = (function () {
       '</p>' +
       '<div style="background:var(--color-bg-secondary);border-radius:var(--radius-md);' +
         'padding:var(--space-4);text-align:center;margin:var(--space-4) 0">' +
-        '<a id="import-bookmarklet-drag" href="' + code + '"' +
+        '<a id="import-bookmarklet-drag" href="' + hrefCode + '"' +
           ' style="display:inline-block;padding:10px 20px;background:var(--color-accent);' +
           'color:#fff;border-radius:var(--radius-md);text-decoration:none;font-weight:600;cursor:grab"' +
           ' onclick="event.preventDefault();alert(\'Drag this button to your bookmarks bar \u2014 don\\\'t click it here.\')">' +
