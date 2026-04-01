@@ -38,10 +38,10 @@ const App = {
 
     // Wire rates buttons
     document.getElementById("btn-refresh-rates")?.addEventListener("click", async () => {
-      App.toast("Refreshing rates...", "default");
+      App.toast("Fetching latest official rates...", "default");
       await RatesManager.refresh();
       this.loadRatesUI();
-      App.toast("Rates updated", "success");
+      App.toast("Official rates updated — your customisations preserved", "success");
     });
     document.getElementById("btn-reset-all-rates")?.addEventListener("click", async () => {
       await RatesManager.resetAllOverrides();
