@@ -285,3 +285,22 @@
 .rate-row input[type=number].overridden { border-color: var(--color-accent); }
 .btn-rate-reset { background: none; border: 1px solid var(--color-border); border-radius: var(--radius-sm); padding: 4px 6px; font-size: 14px; cursor: pointer; color: var(--color-text-muted); line-height: 1; }
 .btn-rate-reset:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+
+/* ── Vehicle Preset Search ── */
+.preset-search-wrap { margin-bottom: var(--space-5); border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-5); }
+.preset-hint { font-weight: 400; color: var(--color-text-muted); font-size: var(--font-size-xs); }
+.preset-search-box { position: relative; }
+.preset-dropdown { display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); list-style: none; margin: 0; padding: var(--space-1) 0; max-height: 280px; overflow-y: auto; }
+.preset-dropdown.open { display: block; }
+.preset-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); cursor: pointer; transition: background 0.1s; }
+.preset-item:hover { background: var(--color-surface-raised); }
+.preset-name { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preset-variant { font-size: var(--font-size-xs); color: var(--color-text-muted); flex: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.preset-fuel { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 99px; flex-shrink: 0; }
+.preset-fuel--petrol   { background: #fef3c7; color: #92400e; }
+.preset-fuel--diesel   { background: #e0e7ff; color: #3730a3; }
+.preset-fuel--hybrid   { background: #d1fae5; color: #065f46; }
+.preset-fuel--phev     { background: #cffafe; color: #155e75; }
+.preset-fuel--electric { background: #ede9fe; color: #4c1d95; }
+.preset-fuel--lpg      { background: #fee2e2; color: #991b1b; }

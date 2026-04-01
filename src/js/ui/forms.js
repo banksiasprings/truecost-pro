@@ -1,6 +1,5 @@
 // TRUE COST — ui/forms.js
 // Multi-step vehicle input form.
-
 const Forms = {
   _step: 0,
   _vehicle: null,
@@ -9,7 +8,6 @@ const Forms = {
   async renderAddVehicle(params = {}) {
     this._step = 0;
     this._editId = params.id || null;
-
     if (this._editId) {
       this._vehicle = await getVehicle(this._editId) || createVehicle();
       document.getElementById('add-vehicle-title').textContent = 'Edit Vehicle';
@@ -18,7 +16,6 @@ const Forms = {
       this._vehicle = createVehicle({ state: settings.state });
       document.getElementById('add-vehicle-title').textContent = 'Add Vehicle';
     }
-
     this.renderStep(0);
   },
 
@@ -29,7 +26,6 @@ const Forms = {
       dot.classList.toggle('active', i === step);
       dot.classList.toggle('done', i < step);
     });
-
     const container = document.getElementById('vehicle-form-container');
     const stepFns = [
       () => this.stepIdentity(),
@@ -43,7 +39,8 @@ const Forms = {
 
   stepIdentity() {
     const v = this._vehicle;
-    return `<div class="card"><h2 class="card-title">Vehicle Details</h2><div class="form-row"><div class="form-group"><label class="label" for="f-year">Year</label><input type="number" class="input" id="f-year" value="${v.year}" min="1950" max="${new Date().getFullYear()+2}"></div><div class="form-group" style="flex:2"><label class="label" for="f-make">Make</label><input type="text" class="input" id="f-make" value="${v.make}" placeholder="e.g. Toyota"></div></div><div class="form-group"><label class="label" for="f-model">Model</label><input type="text" class="input" id="f-model" value="${v.model}" placeholder="e.g. Corolla Cross"></div><div class="form-group"><label class="label" for="f-variant">Variant (optional)</label><input type="text" class="input" id="f-variant" value="${v.variant}" placeholder="e.g. GX Hybrid"></div><div class="form-group"><label class="label" for="f-fueltype">Fuel type</label><div class="select-wrapper"><select class="select" id="f-fueltype"><option value="petrol"   ${v.fuelType==='petrol'   ?'selected':''}>Petrol</option><option value="diesel"   ${v.fuelType==='diesel'   ?'selected':''}>Diesel</option><option value="hybrid"   ${v.fuelType==='hybrid'   ?'selected':''}>Hybrid</option><option value="phev"     ${v.fuelType==='phev'     ?'selected':''}>Plug-in Hybrid (PHEV)</option><option value="electric" ${v.fuelType==='electric' ?'selected':''}>Electric (EV)</option><option value="lpg"      ${v.fuelType==='lpg'      ?'selected':''}>LPG</option></select></div></div></div><button class="btn btn-primary btn-full btn-pill" id="step-next">Continue</button>`;
+    const presetSearch = `<div class="form-group preset-search-wrap"><label class="label" for="f-preset-search">Quick fill from preset <span class="preset-hint">— optional, 28 popular AU vehicles</span></label><div class="preset-search-box"><input type="text" class="input" id="f-preset-search" placeholder="e.g. HiLux, RAV4 Hybrid, Tesla Model 3…" autocomplete="off"><ul class="preset-dropdown" id="preset-dropdown"></ul></div></div>`;
+    return `<div class="card"><h2 class="card-title">Vehicle Details</h2>${presetSearch}<div class="form-row"><div class="form-group"><label class="label" for="f-year">Year</label><input type="number" class="input" id="f-year" value="${v.year}" min="1950" max="${new Date().getFullYear()+2}"></div><div class="form-group" style="flex:2"><label class="label" for="f-make">Make</label><input type="text" class="input" id="f-make" value="${v.make}" placeholder="e.g. Toyota"></div></div><div class="form-group"><label class="label" for="f-model">Model</label><input type="text" class="input" id="f-model" value="${v.model}" placeholder="e.g. Corolla Cross"></div><div class="form-group"><label class="label" for="f-variant">Variant (optional)</label><input type="text" class="input" id="f-variant" value="${v.variant}" placeholder="e.g. GX Hybrid"></div><div class="form-group"><label class="label" for="f-fueltype">Fuel type</label><div class="select-wrapper"><select class="select" id="f-fueltype"><option value="petrol"   ${v.fuelType==='petrol'   ?'selected':''}>Petrol</option><option value="diesel"   ${v.fuelType==='diesel'   ?'selected':''}>Diesel</option><option value="hybrid"   ${v.fuelType==='hybrid'   ?'selected':''}>Hybrid</option><option value="phev"     ${v.fuelType==='phev'     ?'selected':''}>Plug-in Hybrid (PHEV)</option><option value="electric" ${v.fuelType==='electric' ?'selected':''}>Electric (EV)</option><option value="lpg"      ${v.fuelType==='lpg'      ?'selected':''}>LPG</option></select></div></div></div><button class="btn btn-primary btn-full btn-pill" id="step-next">Continue</button>`;
   },
 
   stepPurchase() {
@@ -80,6 +77,47 @@ const Forms = {
     document.getElementById('f-financed')?.addEventListener('change', (e) => {
       document.getElementById('finance-fields').style.display = e.target.checked ? '' : 'none';
     });
+
+    // Vehicle preset search (step 0 only)
+    if (step === 0 && window.VehiclePresets) {
+      const searchInput = document.getElementById('f-preset-search');
+      const dropdown = document.getElementById('preset-dropdown');
+      if (!searchInput || !dropdown) return;
+
+      let _results = [];
+
+      searchInput.addEventListener('input', () => {
+        _results = window.VehiclePresets.search(searchInput.value);
+        if (_results.length === 0) {
+          dropdown.innerHTML = '';
+          dropdown.classList.remove('open');
+          return;
+        }
+        dropdown.innerHTML = _results.map((p, i) => {
+          const fuelBadge = `<span class="preset-fuel preset-fuel--${p.fuelType}">${p.fuelType}</span>`;
+          return `<li class="preset-item" data-idx="${i}"><span class="preset-name">${p.year} ${p.make} ${p.model}</span><span class="preset-variant">${p.variant}</span>${fuelBadge}</li>`;
+        }).join('');
+        dropdown.classList.add('open');
+      });
+
+      dropdown.addEventListener('click', (e) => {
+        const li = e.target.closest('.preset-item');
+        if (!li) return;
+        const idx = parseInt(li.dataset.idx);
+        const preset = _results[idx];
+        if (!preset) return;
+        // Apply all preset fields to vehicle
+        Object.assign(this._vehicle, preset);
+        // Re-render step to show pre-filled values
+        this.renderStep(0);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.preset-search-box')) {
+          dropdown.classList.remove('open');
+        }
+      });
+    }
   },
 
   collectStep(step) {

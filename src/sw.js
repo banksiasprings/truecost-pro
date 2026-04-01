@@ -1,6 +1,6 @@
 // TRUE COST — Service Worker
 // Cache version: bump this string to force all clients to refresh
-const CACHE_NAME = 'truecost-v3';
+const CACHE_NAME = 'truecost-v4';
 
 const PRECACHE_URLS = [
   '/',
@@ -20,6 +20,7 @@ const PRECACHE_URLS = [
   '/js/calc/insurance.js',
   '/js/ui/app.js',
   '/js/ui/router.js',
+  '/data/vehicles.js',
   '/js/ui/forms.js',
   '/js/ui/vehicle-card.js',
   '/js/data/rates-manager.js',
