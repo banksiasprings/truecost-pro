@@ -14,25 +14,38 @@ function calcFuel(vehicle, scenario) {
   let costPerKm = 0;
 
   if (vehicle.fuelType === "electric") {
-    // EV: blend home and public charging tariffs
-    const homePct = (100 - (vehicle.evPublicChargingPct || 0)) / 100;
-    const pubPct  = (vehicle.evPublicChargingPct || 0) / 100;
-    const homeRate   = vehicle.evChargingTariff  || _fuelDefault("evHomeRate",   AustraliaData.fuel.evHomeRate);
-    const publicRate = vehicle.evPublicTariff    || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate);
-    const blendedTariff = (homePct * homeRate) + (pubPct * publicRate); // cents/kWh
-    // evConsumptionKwh is kWh/100km
-    costPerKm = (vehicle.evConsumptionKwh / 100) * (blendedTariff / 100); // AUD/km
+    // EV: blend home and public charging. New $/kWh fields take priority.
+    const homePct  = (vehicle.evHomePercent  !== undefined ? vehicle.evHomePercent  : (100 - (vehicle.evPublicChargingPct || 0))) / 100;
+    const pubPct   = (vehicle.evPublicPercent !== undefined ? vehicle.evPublicPercent : (vehicle.evPublicChargingPct || 0)) / 100;
+    let homeRate, pubRate;
+    if (vehicle.evHomeRate !== undefined) {
+      homeRate = vehicle.evHomeRate;        // $/kWh
+      pubRate  = vehicle.evPublicRate !== undefined ? vehicle.evPublicRate : 0.45;
+    } else {
+      homeRate = (vehicle.evChargingTariff  || _fuelDefault("evHomeRate",   AustraliaData.fuel.evHomeRate))  / 100;
+      pubRate  = (vehicle.evPublicTariff    || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate)) / 100;
+    }
+    const effectiveRate = (homePct * homeRate) + (pubPct * pubRate); // $/kWh
+    const consumption   = vehicle.evConsumptionKwh || 18;            // kWh/100km
+    costPerKm = (consumption / 100) * effectiveRate;                 // AUD/km
 
   } else if (vehicle.fuelType === "phev") {
-    // PHEV: blend electric and petrol legs
+    // PHEV: blend electric and petrol legs using new $/kWh fields
     const elecFraction   = (vehicle.phevElectricPct || 50) / 100;
     const petrolFraction = 1 - elecFraction;
-    const homePct   = (100 - (vehicle.evPublicChargingPct || 0)) / 100;
-    const pubPct    = (vehicle.evPublicChargingPct || 0) / 100;
-    const homeRate  = vehicle.evChargingTariff || _fuelDefault("evHomeRate",   AustraliaData.fuel.evHomeRate);
-    const pubRate   = vehicle.evPublicTariff   || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate);
-    const blended   = (homePct * homeRate) + (pubPct * pubRate);
-    const evCostPerKm = (vehicle.evConsumptionKwh / 100) * (blended / 100);
+    const hPct = (vehicle.evHomePercent   !== undefined ? vehicle.evHomePercent   : (100 - (vehicle.evPublicChargingPct || 0))) / 100;
+    const pPct = (vehicle.evPublicPercent !== undefined ? vehicle.evPublicPercent : (vehicle.evPublicChargingPct || 0)) / 100;
+    let hRate, pRate;
+    if (vehicle.evHomeRate !== undefined) {
+      hRate = vehicle.evHomeRate;
+      pRate = vehicle.evPublicRate !== undefined ? vehicle.evPublicRate : 0.45;
+    } else {
+      hRate = (vehicle.evChargingTariff || _fuelDefault("evHomeRate",   AustraliaData.fuel.evHomeRate))  / 100;
+      pRate = (vehicle.evPublicTariff   || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate)) / 100;
+    }
+    const blendedEv   = (hPct * hRate) + (pPct * pRate); // $/kWh
+    const evConsump   = vehicle.evConsumptionKwh || 18;
+    const evCostPerKm = (evConsump / 100) * blendedEv;
     const fuelPrice = vehicle.fuelPricePerLitre || _fuelDefault("ulp91", AustraliaData.fuel.unleaded);
     const petrolCostPerKm = (vehicle.fuelConsumption / 100) * (fuelPrice / 100);
     costPerKm = (elecFraction * evCostPerKm) + (petrolFraction * petrolCostPerKm);

@@ -38,10 +38,10 @@ const VehicleDetail = {
     document.getElementById('btn-detail-back').onclick = () =>
       Router.navigate('vehicles');
     document.getElementById('btn-detail-delete').onclick = async () => {
-      if (confirm('Delete ' + vehicleLabel(vehicle) + '?')) {
+      App.showConfirmModal('Delete ' + vehicleLabel(vehicle) + '?', async () => {
         await deleteVehicle(vehicle.id);
         Router.navigate('vehicles');
-      }
+      });
     };
 
     // Summary chips

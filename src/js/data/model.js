@@ -18,7 +18,7 @@ function createVehicle(overrides = {}) {
     resaleValue10yr: 0, resaleAt100k: 0, resaleAt200k: 0,
     fuelConsumption: 8.5, fuelConsumptionCity: 0, fuelConsumptionHighway: 0,
     fuelPricePerLitre: 189,
-    evRangeKm: 0, evBatteryKwh: 0, evConsumptionKwh: 18,
+    evRangeKm: 0, evBatteryKwh: 0, evConsumptionKwh: 18, evHomePercent: 80, evHomeRate: 0.30, evPublicPercent: 20, evPublicRate: 0.45,
     evChargingTariff: 30, evPublicChargingPct: 20, evPublicTariff: 60,
     phevElectricRangeKm: 0, phevElectricPct: 40,
     batteryReplacementCost: 15000, batteryWarrantyCycles: 0, batteryExpectedKm: 250000,

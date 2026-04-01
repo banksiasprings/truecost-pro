@@ -192,6 +192,64 @@ const App = {
     });
   },
 
+  showConfirmModal(title, onConfirm) {
+    const existing = document.getElementById('tc-confirm-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'tc-confirm-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9000;display:flex;align-items:flex-end;justify-content:center;animation:tcFadeIn 0.15s ease';
+
+    overlay.innerHTML = `
+      <style>
+        @keyframes tcFadeIn  { from { opacity:0 }          to { opacity:1 } }
+        @keyframes tcSlideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }
+        #tc-confirm-modal .tc-sheet {
+          background: var(--color-bg-card, #fff);
+          border-radius: 20px 20px 0 0;
+          padding: 24px 24px 36px;
+          width: 100%;
+          max-width: 480px;
+          animation: tcSlideUp 0.25s cubic-bezier(0.32,0.72,0,1);
+          box-shadow: 0 -4px 32px rgba(0,0,0,0.15);
+        }
+        #tc-confirm-modal .tc-handle {
+          width:40px;height:4px;border-radius:2px;
+          background:var(--color-border,#ddd);
+          margin: 0 auto 20px;
+        }
+        #tc-confirm-modal .tc-title {
+          font-size:1.05rem;font-weight:600;
+          text-align:center;margin-bottom:22px;
+          color:var(--color-text);
+        }
+        #tc-confirm-modal .tc-btn-delete {
+          display:block;width:100%;padding:14px;
+          background:var(--color-error,#e63946);
+          color:#fff;border:none;border-radius:var(--radius-md,10px);
+          font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;
+        }
+        #tc-confirm-modal .tc-btn-cancel {
+          display:block;width:100%;padding:14px;
+          background:var(--color-bg-input,#f0f0ec);
+          color:var(--color-text);border:none;border-radius:var(--radius-md,10px);
+          font-size:1rem;cursor:pointer;
+        }
+      </style>
+      <div class="tc-sheet">
+        <div class="tc-handle"></div>
+        <div class="tc-title">${title}</div>
+        <button class="tc-btn-delete" id="tc-confirm-delete">Delete</button>
+        <button class="tc-btn-cancel" id="tc-confirm-cancel">Cancel</button>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('tc-confirm-delete').onclick = () => { overlay.remove(); onConfirm(); };
+    document.getElementById('tc-confirm-cancel').onclick = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  },
+
   toast(message, type = "default", duration = 3000) {
     const container = document.getElementById("toast-container");
     if (!container) return;

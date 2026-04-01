@@ -28,10 +28,10 @@ const VehicleCard = {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const id = btn.dataset.id;
-        if (confirm('Delete this vehicle?')) {
+        App.showConfirmModal('Delete this vehicle?', async () => {
           await deleteVehicle(id);
           VehicleCard.renderList();
-        }
+        });
       });
     });
 

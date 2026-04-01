@@ -1,5 +1,16 @@
 // TRUE COST - ui/comparison.js
 // Phase 5: Year-by-year cumulative cost line chart + table added.
+
+// Build chart-safe label: 4-digit year, truncated to <=25 chars.
+function chartLabel(v) {
+  if (!v) return "Unknown";
+  var year = String(v.year || "");
+  if (year.length === 2) year = (parseInt(year, 10) >= 50 ? "19" : "20") + year;
+  var base = [year, v.make, v.model].filter(Boolean).join(" ");
+  var full = v.variant ? base + " " + v.variant : base;
+  if (full.length <= 25) return full;
+  return full.slice(0, 24) + "\u2026";
+}
 const CHART_COLORS = {
   depreciation:    '#8B6355',
   fuel:            '#E8572A',
@@ -241,7 +252,7 @@ const Comparison = {
     Chart.defaults.font.size = 11;
     Chart.defaults.color = '#6B6B6B';
 
-    var labels = subset.map(function(r) { return vehicleLabel(r.vehicle); });
+    var labels = subset.map(function(r) { return chartLabel(r.vehicle); });
 
     // Horizontal grouped bar: cost breakdown by category, one bar per vehicle
     destroyChart('stacked');
@@ -252,7 +263,7 @@ const Comparison = {
       var vehicleDatasets = subset.map(function(r, idx) {
         var col = vehicleColors[idx % vehicleColors.length];
         return {
-          label: vehicleLabel(r.vehicle),
+          label: chartLabel(r.vehicle),
           data: activeCategories.map(function(cat) {
             return Math.round(r.costs.total[cat.key] || 0);
           }),
@@ -417,7 +428,7 @@ const Comparison = {
           datasets: yearlyData.map(function(d, idx) {
             var col = LINE_COLORS[idx % LINE_COLORS.length];
             return {
-              label: vehicleLabel(d.vehicle),
+              label: chartLabel(d.vehicle),
               data: d.byYear.map(function(v) { return Math.round(v); }),
               borderColor: col,
               backgroundColor: col + '18',

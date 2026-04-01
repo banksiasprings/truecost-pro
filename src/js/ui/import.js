@@ -69,7 +69,7 @@ var VehicleImport = (function () {
     if (data.year)  vehicle.year  = data.year;
     if (data.price) vehicle.purchasePrice = data.price;
     if (data.fuel)  vehicle.fuelType = data.fuel;
-    if (data.odo)   vehicle.annualKm = Math.round(data.odo / 5);
+    if (data.odo)   vehicle.purchaseOdometer = data.odo;
     if (data.fc)    vehicle.fuelConsumption = data.fc;
     if (data.name)  vehicle.nickname = data.name;
     return vehicle;
