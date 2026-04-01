@@ -4,7 +4,7 @@
 function calcInsurance(vehicle, scenario) {
   let annualCost = vehicle.insuranceAnnual;
   if (!annualCost && vehicle.insuranceCategory) {
-    anuualCost = AustraliaData.insurance[vehicle.insuranceCategory]
+    annualCost = AustraliaData.insurance[vehicle.insuranceCategory]
               || Defaults.vehicle.insuranceAnnual;
   }
   annualCost = annualCost || Defaults.vehicle.insuranceAnnual;
@@ -13,5 +13,5 @@ function calcInsurance(vehicle, scenario) {
   const km = scenario.years * scenario.kmPerYear;
   const perKm = km > 0 ? total / km : 0;
 
-  return { total, perKm, perYear: anuualCost };
+  return { total, perKm, perYear: annualCost };
 }
