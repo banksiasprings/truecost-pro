@@ -213,9 +213,11 @@ const Comparison = {
           var el = document.getElementById('chart-' + tab + '-wrap');
           if (el) el.classList.toggle('hidden', tab !== btn.dataset.tab);
         });
-        // Resize the newly visible chart so it fills its container correctly
+        // Double-rAF: wait for layout reflow before resizing the chart
         requestAnimationFrame(function() {
-          if (_charts[btn.dataset.tab]) _charts[btn.dataset.tab].resize();
+          requestAnimationFrame(function() {
+            if (_charts[btn.dataset.tab]) _charts[btn.dataset.tab].resize();
+          });
         });
       });
     });
