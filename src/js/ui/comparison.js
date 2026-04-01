@@ -145,67 +145,6 @@ const Comparison = {
     });
     html += '</div>';
 
-    // Year-by-year cumulative cost table
-    html += '<div class="card"><h2 class="card-title">Year-by-Year Cumulative Cost</h2>';
-    html += '<div style="overflow-x:auto">';
-    html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
-    html += '<thead><tr>';
-    html += '<th style="text-align:left;padding:8px 6px;border-bottom:2px solid var(--color-border);color:var(--color-text-muted);font-weight:600;white-space:nowrap">Year</th>';
-    subset.forEach(function(r, idx) {
-      html += '<th style="text-align:right;padding:8px 6px;border-bottom:2px solid var(--color-border);font-weight:700;color:' + LINE_COLORS[idx % LINE_COLORS.length] + '">';
-      html += r.vehicle.make + ' ' + r.vehicle.model;
-      html += '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    yearRange.forEach(function(y, i) {
-      var rowVals = yearlyData.map(function(d) { return d.byYear[i]; });
-      var minVal = Math.min.apply(null, rowVals);
-      var isLast = y === scenario.years;
-      html += '<tr>';
-      html += '<td style="padding:8px 6px;border-bottom:1px solid var(--color-border);color:var(--color-text-muted);font-weight:' + (isLast ? '700' : '400') + '">' + y + 'yr</td>';
-      rowVals.forEach(function(val, vi) {
-        var isBest = val === minVal;
-        var style = 'text-align:right;padding:8px 6px;border-bottom:1px solid var(--color-border);';
-        style += 'font-weight:' + (isBest ? '700' : isLast ? '600' : '400') + ';';
-        style += 'color:' + (isBest ? 'var(--color-primary)' : 'var(--color-text)') + ';';
-        html += '<td style="' + style + '">' + fmtAUD(Math.round(val)) + (isBest ? ' \u2713' : '') + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</tbody></table>';
-    // Savings callout
-    var finalVals = yearlyData.map(function(d) { return d.byYear[scenario.years - 1]; });
-    var sortedFinal = finalVals.slice().sort(function(a,b){return a-b;});
-    if (sortedFinal.length >= 2) {
-      var saving = Math.round(sortedFinal[sortedFinal.length - 1] - sortedFinal[0]);
-      html += '<p style="margin-top:12px;font-size:12px;color:var(--color-text-muted)">Best value saves <strong>' + fmtAUD(saving) + '</strong> over ' + scenario.years + ' years vs the most expensive option.</p>';
-    }
-    html += '</div></div>';
-
-    // Detailed category breakdown table
-    html += '<div class="card"><h2 class="card-title">Category Breakdown</h2>';
-    COST_CATEGORIES.forEach(function(cat) {
-      var vals = subset.map(function(r) { return r.costs.total[cat.key] || 0; });
-      if (!vals.some(function(v) { return v > 0; })) return;
-      var maxVal = Math.max.apply(null, vals);
-      var minVal = Math.min.apply(null, vals.filter(function(v) { return v > 0; }));
-      html += '<div style="margin-bottom:20px">';
-      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
-      html += '<span style="width:10px;height:10px;border-radius:2px;background:' + CHART_COLORS[cat.key] + ';flex-shrink:0"></span>';
-      html += '<span style="font-size:13px;font-weight:600;color:var(--color-text-secondary)">' + cat.label + '</span></div>';
-      html += '<div class="compare-grid" data-count="' + count + '">';
-      vals.forEach(function(val) {
-        var pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
-        var isBest = val === minVal && val > 0;
-        html += '<div>';
-        html += '<div style="font-size:13px;font-weight:' + (isBest ? '700' : '400') + ';color:' + (isBest ? 'var(--color-primary)' : 'var(--color-text)') + '">' + fmtAUD(val) + '</div>';
-        html += '<div style="height:4px;border-radius:2px;background:var(--color-border);margin-top:4px;overflow:hidden">';
-        html += '<div style="height:100%;width:' + pct.toFixed(1) + '%;background:' + (isBest ? 'var(--color-primary)' : CHART_COLORS[cat.key]) + ';border-radius:2px"></div>';
-        html += '</div></div>';
-      });
-      html += '</div></div>';
-    });
-    html += '</div>';
 
     container.innerHTML = html;
 
