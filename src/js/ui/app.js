@@ -77,6 +77,17 @@ const App = {
 
     // Start on vehicles page
     Router.navigate("vehicles");
+
+    // Handle import / Web Share Target URL params
+    var _urlP = new URLSearchParams(location.search);
+    if (_urlP.get("import") === "1" && window.VehicleImport) {
+      var _importData = VehicleImport.fromUrlParams();
+      if (_importData) Router.navigate("add-vehicle", { importData: _importData });
+    } else if (_urlP.get("share") === "1" && window.VehicleImport) {
+      var _shareUrl = _urlP.get("url") || _urlP.get("text") || "";
+      var _sharedData = VehicleImport.fromSharedUrl(_shareUrl);
+      if (_sharedData) Router.navigate("add-vehicle", { importData: _sharedData });
+    }
   },
 
   async saveSettings() {

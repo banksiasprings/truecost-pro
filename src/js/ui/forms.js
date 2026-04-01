@@ -4,8 +4,73 @@ const Forms = {
   _step: 0,
   _vehicle: null,
   _editId: null,
+  _importData: null,
 
   async renderAddVehicle(params = {}) {
+    this._step = 0;
+    this._editId = params.id || null;
+    this._importData = params.importData || null;
+    if (this._editId) {
+      this._vehicle = await getVehicle(this._editId) || createVehicle();
+      document.getElementById('add-vehicle-title').textContent = 'Edit Vehicle';
+      this.renderStep(0);
+    } else {
+      const settings = App.settings || Defaults.scenario;
+      this._vehicle = createVehicle({ state: settings.state });
+      document.getElementById('add-vehicle-title').textContent = 'Add Vehicle';
+      if (this._importData) {
+        VehicleImport.applyToVehicle(this._importData, this._vehicle);
+        this.renderStep(0);
+      } else {
+        this.renderImportEntry();
+      }
+    }
+  },
+  renderImportEntry() {
+    const container = document.getElementById('vehicle-form-container');
+    container.innerHTML = VehicleImport.renderEntryScreen();
+    document.getElementById('import-manual-btn')?.addEventListener('click', () => {
+      this.renderStep(0);
+    });
+    document.getElementById('import-paste-btn')?.addEventListener('click', () => {
+      container.innerHTML = VehicleImport.renderPasteScreen();
+      this._bindPasteEvents(container);
+    });
+    document.getElementById('import-bookmarklet-btn')?.addEventListener('click', () => {
+      container.innerHTML = VehicleImport.renderBookmarkletScreen();
+      this._bindBookmarkletEvents(container);
+    });
+  },
+  _bindPasteEvents(container) {
+    document.getElementById('import-paste-parse-btn')?.addEventListener('click', () => {
+      const textarea = document.getElementById('import-paste-text');
+      const parsed = VehicleImport.fromPastedText(textarea ? textarea.value : '');
+      if (!parsed) {
+        App.toast('Could not extract details - try pasting more text', 'error');
+        return;
+      }
+      VehicleImport.applyToVehicle(parsed, this._vehicle);
+      App.toast('Details extracted - review and continue', 'success');
+      this.renderStep(0);
+    });
+    document.getElementById('import-paste-back-btn')?.addEventListener('click', () => {
+      this.renderImportEntry();
+    });
+  },
+  _bindBookmarkletEvents(container) {
+    document.getElementById('import-bookmarklet-copy-btn')?.addEventListener('click', () => {
+      const textarea = document.getElementById('import-bookmarklet-code');
+      if (textarea) {
+        navigator.clipboard.writeText(textarea.value)
+          .then(() => App.toast('Bookmarklet code copied!', 'success'))
+          .catch(() => { textarea.select(); document.execCommand('copy'); App.toast('Copied!', 'success'); });
+      }
+    });
+    document.getElementById('import-bookmarklet-back-btn')?.addEventListener('click', () => {
+      this.renderImportEntry();
+    });
+  },
+) {
     this._step = 0;
     this._editId = params.id || null;
     if (this._editId) {

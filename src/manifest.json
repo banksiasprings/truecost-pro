@@ -29,5 +29,14 @@
     "finance",
     "utilities"
   ],
-  "screenshots": []
+  "screenshots": [],
+  "share_target": {
+    "action": "/?share=1",
+    "method": "GET",
+    "params": {
+      "url": "url",
+      "text": "text",
+      "title": "title"
+    }
+  }
 }
