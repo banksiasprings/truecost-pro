@@ -36,6 +36,28 @@ const Forms = {
       container.innerHTML = VehicleImport.renderPasteScreen();
       this._bindPasteEvents(container);
     });
+
+    document.getElementById('import-url-btn')?.addEventListener('click', () => {
+      container.innerHTML = VehicleImport.renderUrlScreen();
+      document.getElementById('import-url-back-btn')?.addEventListener('click', () => {
+        this.renderImportEntry();
+      });
+      document.getElementById('import-url-fetch-btn')?.addEventListener('click', () => {
+        const urlInput = document.getElementById('import-url-input');
+        const url = urlInput ? urlInput.value.trim() : '';
+        if (!url) { App.toast('Please paste a Carsales URL', 'error'); return; }
+        const btn = document.getElementById('import-url-fetch-btn');
+        if (btn) { btn.textContent = 'Fetching…'; btn.disabled = true; }
+        VehicleImport.fromProxyUrl(url, (data) => {
+          VehicleImport.applyToVehicle(data, this._vehicle);
+          App.toast('Car details imported!', 'success');
+          this.renderStep(0);
+        }, (err) => {
+          if (btn) { btn.textContent = 'Import Car Details'; btn.disabled = false; }
+          App.toast(err || 'Import failed', 'error');
+        });
+      });
+    });
     document.getElementById('import-bookmarklet-btn')?.addEventListener('click', () => {
       container.innerHTML = VehicleImport.renderBookmarkletScreen();
       this._bindBookmarkletEvents(container);

@@ -45,6 +45,28 @@ var VehicleImport = (function () {
     };
   }
 
+
+  function fromProxyUrl(url, onSuccess, onError) {
+    var PROXY = "https://truecost-proxy.openclaw.workers.dev";
+    fetch(PROXY + "?url=" + encodeURIComponent(url))
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.error) { onError(d.error); return; }
+        if (d.year)    d.year    = parseInt(d.year, 10)    || null;
+        if (d.price)   d.price   = parseFloat(d.price)     || null;
+        if (d.odo)     d.odo     = parseInt(d.odo, 10)     || null;
+        if (d.fc)      d.fc      = parseFloat(d.fc)        || null;
+        if (d.battery) d.battery = parseFloat(d.battery)  || null;
+        if (d.range)   d.range   = parseInt(d.range, 10)  || null;
+        if (d.ancap)   d.ancap   = parseInt(d.ancap, 10)  || null;
+        if (d.doors)   d.doors   = parseInt(d.doors, 10)  || null;
+        if (d.seats)   d.seats   = parseInt(d.seats, 10)  || null;
+        if (d.fuel)    d.fuel    = _normaliseFuel(d.fuel);
+        if (d.drive)   d.drive   = _normaliseDrive(d.drive);
+        onSuccess(d);
+      })
+      .catch(function() { onError('Could not reach import service. Check your connection.'); });
+  }
   function fromPastedText(text) {
     if (!text || text.trim().length < 10) return null;
     var d = { src: 'paste', raw: text };
@@ -159,6 +181,25 @@ var VehicleImport = (function () {
     '</div>';
   }
 
+
+  function renderUrlScreen() {
+    return [
+      '<div class="import-url">',
+      '  <h3 style="margin-bottom:var(--space-3)">Import from URL</h3>',
+      '  <p style="color:var(--color-text-muted);margin-bottom:var(--space-4);font-size:var(--font-size-sm)">',
+      '    Copy the link from any Carsales listing and paste it below. Works on every device.',
+      '  </p>',
+      '  <input type="url" id="import-url-input" placeholder="https://www.carsales.com.au/cars/details/…"',
+      '    style="width:100%;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:var(--font-size-sm);box-sizing:border-box;font-family:inherit;margin-bottom:var(--space-4)">',
+      '  <button class="btn btn-primary btn-full" id="import-url-fetch-btn">',
+      '    Import Car Details',
+      '  </button>',
+      '  <button class="btn btn-ghost btn-full" id="import-url-back-btn" style="margin-top:var(--space-2)">',
+      '    ← Back',
+      '  </button>',
+      '</div>',
+    ].join(chr(10));
+  }
   function renderBookmarkletScreen() {
     var code = _bookmarkletCode();
     var hrefCode = code.replace(/&/g, '&amp;').replace(/>/g, '&gt;').replace(/</g, '&lt;').replace(/\"/g, '&quot;');
@@ -307,6 +348,8 @@ var VehicleImport = (function () {
     fromPastedText:          fromPastedText,
     applyToVehicle:          applyToVehicle,
     renderEntryScreen:       renderEntryScreen,
+    fromProxyUrl:            fromProxyUrl,
+    renderUrlScreen:         renderUrlScreen,
     renderPasteScreen:       renderPasteScreen,
     renderBookmarkletScreen: renderBookmarkletScreen,
   };

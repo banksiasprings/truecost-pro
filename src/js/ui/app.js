@@ -85,8 +85,19 @@ const App = {
       if (_importData) Router.navigate("add-vehicle", { importData: _importData });
     } else if (_urlP.get("share") === "1" && window.VehicleImport) {
       var _shareUrl = _urlP.get("url") || _urlP.get("text") || "";
-      var _sharedData = VehicleImport.fromSharedUrl(_shareUrl);
-      if (_sharedData) Router.navigate("add-vehicle", { importData: _sharedData });
+      if (_shareUrl && _shareUrl.includes('carsales.com.au')) {
+        // Use proxy to get full vehicle data from shared Carsales URL
+        VehicleImport.fromProxyUrl(_shareUrl, function(_proxyData) {
+          Router.navigate("add-vehicle", { importData: _proxyData });
+        }, function() {
+          // Fallback to URL slug parse if proxy fails
+          var _sharedData = VehicleImport.fromSharedUrl(_shareUrl);
+          if (_sharedData) Router.navigate("add-vehicle", { importData: _sharedData });
+        });
+      } else if (_shareUrl) {
+        var _sharedData = VehicleImport.fromSharedUrl(_shareUrl);
+        if (_sharedData) Router.navigate("add-vehicle", { importData: _sharedData });
+      }
     }
   },
 
