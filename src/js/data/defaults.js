@@ -14,7 +14,7 @@ const Defaults = {
   vehicle: {
     fuelType: 'petrol',
     fuelConsumption: 8.5,      // L/100km — average Australian passenger car
-    fuelPricePerLitre: 189,    // cents/L — from AustraliaData.fuel.unleaded
+    fuelPricePerLitre: 205,    // cents/L — from AustraliaData.fuel.unleaded
     serviceIntervalKm: 10000,
     serviceIntervalMonths: 12,
     serviceCostPerService: 350,

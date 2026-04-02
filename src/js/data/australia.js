@@ -34,7 +34,7 @@ const AustraliaData = {
   // ── Fuel price defaults (cents per litre) ──
   // Source: AIP weekly average — update periodically or use live API
   fuel: {
-    unleaded:   189,  // ULP 91
+    unleaded:   205,  // ULP 91 — updated Apr 2026 (post-excise-cut)  // ULP 91
     premium:    209,  // ULP 98
     diesel:     199,
     lpg:        90,
