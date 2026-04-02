@@ -33,5 +33,6 @@
   "webManifestUrl": "https://banksiasprings.github.io/truecost/manifest.json",
   "fallbackType": "customtabs",
   "features": {},
-  "shortcuts": []
+  "shortcuts": [],
+  "splashScreenFadeOutDuration": 300
 }

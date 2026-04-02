@@ -11,11 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -27,40 +22,18 @@ jobs:
         with:
           accept-android-sdk-licenses: true
 
-      - name: Install Bubblewrap CLI
-        run: npm install -g @bubblewrap/cli
+      - name: Make gradlew executable
+        run: chmod +x android-twa/gradlew
 
-      - name: Generate keystore
+      - name: Build debug APK
         run: |
-          keytool -genkey -v \
-            -keystore android.keystore \
-            -keyalg RSA \
-            -alias android \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass android \
-            -keypass android \
-            -dname "CN=TrueCost, OU=Development, O=BanksiaSprings, L=Adelaide, ST=SA, C=AU"
+          cd android-twa
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Init TWA project
+      - name: Locate APK
         run: |
-          mkdir twa-project
-          cp twa-manifest.json twa-project/twa-manifest.json
-          cp android.keystore twa-project/android.keystore
-          cd twa-project
-          bubblewrap init \
-            --manifest https://banksiasprings.github.io/truecost/manifest.json \
-            --directory .
-
-      - name: Build APK
-        run: |
-          cd twa-project
-          bubblewrap build --skipPwaValidation
-
-      - name: Locate and copy APK
-        run: |
-          find twa-project -name "*.apk" | head -5
-          APK=$(find twa-project -name "*.apk" | head -1)
+          find android-twa -name '*.apk' | head -5
+          APK=$(find android-twa -name '*.apk' | head -1)
           cp "$APK" truecost.apk
           echo "APK size: $(du -sh truecost.apk)"
 
@@ -83,7 +56,7 @@ jobs:
             3. If prompted, enable **Install from unknown sources** in Settings
             4. Tap **Install**
 
-            Requires Android 7.0+ with Chrome installed.
+            Requires Android 5.0+ with Chrome installed.
             Direct APK install - no Play Store required.
           files: truecost.apk
           make_latest: true
