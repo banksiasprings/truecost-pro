@@ -55,7 +55,7 @@ android {
     namespace "au.com.banksiasprings.truecost"
     defaultConfig {
         applicationId "au.com.banksiasprings.truecost"
-        minSdkVersion 19
+        minSdkVersion 21
         targetSdkVersion 35
         versionCode 1
         versionName "1"
