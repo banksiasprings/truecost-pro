@@ -477,5 +477,13 @@ const Comparison = {
       var el = document.getElementById('chart-' + id + '-wrap');
       if (el) el.style.display = id === 'stacked' ? '' : 'none';
     });
+    // Force a resize on all charts so they paint correctly after layout
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        ALL_TABS.forEach(function(id) {
+          if (_charts[id]) _charts[id].resize();
+        });
+      });
+    });
   },
 };
