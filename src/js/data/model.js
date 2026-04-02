@@ -32,6 +32,14 @@ function createVehicle(overrides = {}) {
   };
 
   const vehicle = { ...defaults, ...overrides };
+
+  // Apply fuel-type-specific service defaults (only if not explicitly overridden)
+  if (vehicle.fuelType === 'electric') {
+    if (!overrides.serviceIntervalKm)      vehicle.serviceIntervalKm      = 15000;  // EVs service less frequently
+    if (!overrides.serviceCostPerService)  vehicle.serviceCostPerService  = 250;    // ~$250/service (AU avg $200-400/yr)
+  }
+  // Hybrids/PHEVs retain ICE service schedule (still have combustion engines)
+
   if (vehicle.purchasePrice && !overrides.onRoadCost) {
     vehicle.onRoadCost = vehicle.purchasePrice + vehicle.stampDuty
                        + vehicle.ctpInsurance + vehicle.dealerDelivery;
