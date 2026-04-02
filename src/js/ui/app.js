@@ -31,7 +31,14 @@ const App = {
     // Wire add-vehicle buttons
     document.getElementById("btn-add-vehicle")?.addEventListener("click", () => Router.navigate("add-vehicle"));
     document.getElementById("btn-add-first")?.addEventListener("click",   () => Router.navigate("add-vehicle"));
-    document.getElementById("btn-back-to-vehicles")?.addEventListener("click", () => Router.navigate("vehicles"));
+    document.getElementById("btn-back-to-vehicles")?.addEventListener("click", () => {
+      // If mid-form (steps 1+), go to previous step; only go to vehicles list from step 0
+      if (typeof Forms !== 'undefined' && Forms._step > 0) {
+        Forms.renderStep(Forms._step - 1);
+      } else {
+        Router.navigate('vehicles');
+      }
+    });
 
     // Wire settings save
     document.getElementById("btn-save-settings")?.addEventListener("click", () => this.saveSettings());

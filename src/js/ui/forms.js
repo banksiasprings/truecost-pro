@@ -114,7 +114,11 @@ const Forms = {
   stepIdentity() {
     const v = this._vehicle;
     const presetSearch = `<div class="form-group preset-search-wrap"><label class="label" for="f-preset-search">Quick fill from preset <span class="preset-hint">— optional, 28 popular AU vehicles</span></label><div class="preset-search-box"><input type="text" class="input" id="f-preset-search" placeholder="e.g. HiLux, RAV4 Hybrid, Tesla Model 3…" autocomplete="off"><ul class="preset-dropdown" id="preset-dropdown"></ul></div></div>`;
-    return `<div class="card"><h2 class="card-title">Vehicle Details</h2>${presetSearch}<div class="form-row"><div class="form-group"><label class="label" for="f-year">Year</label><input type="number" class="input" id="f-year" value="${v.year}" min="1950" max="${new Date().getFullYear()+2}"></div><div class="form-group" style="flex:2"><label class="label" for="f-make">Make</label><input type="text" class="input" id="f-make" value="${v.make}" placeholder="e.g. Toyota"></div></div><div class="form-group"><label class="label" for="f-model">Model</label><input type="text" class="input" id="f-model" value="${v.model}" placeholder="e.g. Corolla Cross"></div><div class="form-group"><label class="label" for="f-variant">Variant (optional)</label><input type="text" class="input" id="f-variant" value="${v.variant}" placeholder="e.g. GX Hybrid"></div><div class="form-group"><label class="label" for="f-fueltype">Fuel type</label><div class="select-wrapper"><select class="select" id="f-fueltype"><option value="petrol"   ${v.fuelType==='petrol'   ?'selected':''}>Petrol</option><option value="diesel"   ${v.fuelType==='diesel'   ?'selected':''}>Diesel</option><option value="hybrid"   ${v.fuelType==='hybrid'   ?'selected':''}>Hybrid</option><option value="phev"     ${v.fuelType==='phev'     ?'selected':''}>Plug-in Hybrid (PHEV)</option><option value="electric" ${v.fuelType==='electric' ?'selected':''}>Electric (EV)</option><option value="lpg"      ${v.fuelType==='lpg'      ?'selected':''}>LPG</option></select></div></div></div><div class="form-row"><div class="form-group" style="flex:1"><label class="label" for="f-drive">Drive type</label><div class="select-wrapper"><select class="select" id="f-drive"><option value="">Not specified</option><option value="FWD" ${v.driveType==="FWD"?"selected":""}>FWD – Front Wheel</option><option value="RWD" ${v.driveType==="RWD"?"selected":""}>RWD – Rear Wheel</option><option value="AWD" ${v.driveType==="AWD"?"selected":""}>AWD – All Wheel</option><option value="4WD" ${v.driveType==="4WD"?"selected":""}>4WD – Four Wheel</option></select></div></div><div class="form-group" style="flex:1"><label class="label" for="f-colour">Colour</label><input type="text" class="input" id="f-colour" value="${v.colour||''}" placeholder="e.g. Silver"></div></div><div class="form-row"><div class="form-group" style="flex:1"><label class="label" for="f-ancap">ANCAP Safety</label><div class="select-wrapper"><select class="select" id="f-ancap"><option value="">Not rated</option><option value="5" ${v.ancap===5?"selected":""}>5 stars ★★★★★</option><option value="4" ${v.ancap===4?"selected":""}>4 stars ★★★★</option><option value="3" ${v.ancap===3?"selected":""}>3 stars ★★★</option><option value="2" ${v.ancap===2?"selected":""}>2 stars ★★</option><option value="1" ${v.ancap===1?"selected":""}>1 star ★</option></select></div></div><div class="form-group" style="flex:1"><label class="label" for="f-seats">Seats</label><input type="number" class="input" id="f-seats" value="${v.seats||''}" min="1" max="12" placeholder="e.g. 5"></div></div></div><button class="btn btn-primary btn-full btn-pill" id="step-next">Continue</button>`;
+    return `<div class="card"><h2 class="card-title">Vehicle Details</h2>${presetSearch}<div class="form-row"><div class="form-group"><label class="label" for="f-year">Year</label><input type="number" class="input" id="f-year" value="${v.year}" min="1950" max="${new Date().getFullYear()+2}"></div><div class="form-group" style="flex:2"><label class="label" for="f-make">Make</label><input type="text" class="input" id="f-make" value="${v.make}" placeholder="e.g. Toyota" list="make-list" autocomplete="off"></div></div><div class="form-group"><label class="label" for="f-model">Model</label><input type="text" class="input" id="f-model" value="${v.model}" placeholder="e.g. Corolla Cross" list="model-list" autocomplete="off"></div><div class="form-group"><label class="label" for="f-variant">Variant (optional)</label><input type="text" class="input" id="f-variant" value="${v.variant}" placeholder="e.g. GX Hybrid"></div><div class="form-group"><label class="label" for="f-fueltype">Fuel type</label><div class="select-wrapper"><select class="select" id="f-fueltype"><option value="petrol"   ${v.fuelType==='petrol'   ?'selected':''}>Petrol</option><option value="diesel"   ${v.fuelType==='diesel'   ?'selected':''}>Diesel</option><option value="hybrid"   ${v.fuelType==='hybrid'   ?'selected':''}>Hybrid</option><option value="phev"     ${v.fuelType==='phev'     ?'selected':''}>Plug-in Hybrid (PHEV)</option><option value="electric" ${v.fuelType==='electric' ?'selected':''}>Electric (EV)</option><option value="lpg"      ${v.fuelType==='lpg'      ?'selected':''}>LPG</option></select></div></div></div><div class="form-row"><div class="form-group" style="flex:1"><label class="label" for="f-drive">Drive type</label><div class="select-wrapper"><select class="select" id="f-drive"><option value="">Not specified</option><option value="FWD" ${v.driveType==="FWD"?"selected":""}>FWD – Front Wheel</option><option value="RWD" ${v.driveType==="RWD"?"selected":""}>RWD – Rear Wheel</option><option value="AWD" ${v.driveType==="AWD"?"selected":""}>AWD – All Wheel</option><option value="4WD" ${v.driveType==="4WD"?"selected":""}>4WD – Four Wheel</option></select></div></div><div class="form-group" style="flex:1"><label class="label" for="f-colour">Colour</label><input type="text" class="input" id="f-colour" value="${v.colour||''}" placeholder="e.g. Silver"></div></div><div class="form-row"><div class="form-group" style="flex:1"><label class="label" for="f-ancap">ANCAP Safety</label><div class="select-wrapper"><select class="select" id="f-ancap"><option value="">Not rated</option><option value="5" ${v.ancap===5?"selected":""}>5 stars ★★★★★</option><option value="4" ${v.ancap===4?"selected":""}>4 stars ★★★★</option><option value="3" ${v.ancap===3?"selected":""}>3 stars ★★★</option><option value="2" ${v.ancap===2?"selected":""}>2 stars ★★</option><option value="1" ${v.ancap===1?"selected":""}>1 star ★</option></select></div></div><div class="form-group" style="flex:1"><label class="label" for="f-seats">Seats</label><input type="number" class="input" id="f-seats" value="${v.seats||''}" min="1" max="12" placeholder="e.g. 5"></div></div></div><datalist id="make-list">
+  ${["Alfa Romeo","Audi","BMW","BYD","Chery","Ford","Genesis","GWM","Haval","Honda","Hyundai","Isuzu","Jaguar","Jeep","Kia","Land Rover","Lexus","Mazda","Mercedes-Benz","MG","Mini","Mitsubishi","Nissan","Peugeot","Polestar","Porsche","Ram","Renault","Skoda","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo"].map(m => `<option value="${m}">`).join('')}
+</datalist>
+<datalist id="model-list"></datalist>
+<button class="btn btn-primary btn-full btn-pill" id="step-next">Continue</button>`;
   },
 
   stepPurchase() {
@@ -194,7 +198,52 @@ const Forms = {
       });
     }
 
-    // Vehicle preset search (step 0 only)
+    // Make → Model autocomplete (step 0 only)
+  if (step === 0) {
+    var MODEL_MAP = {
+      'Toyota':       ['Camry','Corolla','RAV4','HiLux','LandCruiser','Kluger','Prado','Yaris','C-HR','Fortuner','HiAce','Tarago'],
+      'Ford':         ['Ranger','Everest','Escape','Puma','Mustang','Territory','Transit','Bronco'],
+      'Mazda':        ['CX-5','CX-3','CX-8','CX-90','Mazda3','Mazda2','BT-50','MX-5'],
+      'Hyundai':      ['i30','Tucson','Santa Fe','Kona','Ioniq 5','Ioniq 6','Staria','Palisade','i20'],
+      'Kia':          ['Sportage','Cerato','Sorento','Carnival','EV6','EV9','Stinger','Seltos','Picanto','Niro'],
+      'Tesla':        ['Model 3','Model Y','Model S','Model X','Cybertruck'],
+      'Volkswagen':   ['Golf','Tiguan','Touareg','Amarok','Polo','T-Roc','ID.4','Passat'],
+      'BMW':          ['3 Series','5 Series','7 Series','X3','X5','X7','iX','i4','1 Series','2 Series'],
+      'Mercedes-Benz':['A-Class','C-Class','E-Class','GLC','GLE','GLS','EQA','EQB','EQC','EQS'],
+      'Mitsubishi':   ['Outlander','ASX','Eclipse Cross','Triton','Pajero Sport','Pajero'],
+      'Nissan':       ['X-Trail','Navara','Patrol','Qashqai','Leaf','Juke','Pathfinder'],
+      'Subaru':       ['Outback','Forester','XV','WRX','BRZ','Crosstrek','Impreza'],
+      'Honda':        ['CR-V','HR-V','Jazz','Civic','City','Odyssey','ZR-V'],
+      'MG':           ['ZS','HS','MG4','RX5','3','Marvel R'],
+      'BYD':          ['Atto 3','Seal','Dolphin','Sealion 6','Shark'],
+      'Isuzu':        ['D-MAX','MU-X'],
+      'Land Rover':   ['Defender','Discovery','Range Rover','Range Rover Sport','Range Rover Evoque'],
+      'Volvo':        ['XC40','XC60','XC90','S60','V60','C40'],
+      'Audi':         ['A3','A4','A6','Q3','Q5','Q7','Q8','e-tron','Q4 e-tron'],
+      'Lexus':        ['UX','NX','RX','GX','LX','ES','IS'],
+      'Polestar':     ['Polestar 2','Polestar 3','Polestar 4'],
+      'Porsche':      ['Cayenne','Macan','Taycan','911','Panamera'],
+      'GWM':          ['Ute','Haval H6','Haval Jolion','Tank 300'],
+      'Haval':        ['H6','Jolion','H2'],
+      'Skoda':        ['Octavia','Kodiaq','Karoq','Superb','Scala','Enyaq'],
+      'Renault':      ['Koleos','Arkana','Megane E-Tech','Duster','Captur'],
+      'Peugeot':      ['2008','3008','5008','308','408','e-208','e-2008'],
+      'Suzuki':       ['Vitara','Swift','Jimny','S-Cross','Ignis'],
+    };
+    var makeInput = document.getElementById('f-make');
+    var modelDl   = document.getElementById('model-list');
+    function updateModelList() {
+      var make = (makeInput?.value || '').trim();
+      var models = MODEL_MAP[make] || [];
+      if (modelDl) modelDl.innerHTML = models.map(function(m){ return '<option value="' + m + '">'; }).join('');
+    }
+    if (makeInput) {
+      makeInput.addEventListener('input', updateModelList);
+      updateModelList(); // populate on render if make already set
+    }
+  }
+
+  // Vehicle preset search (step 0 only)
     if (step === 0 && window.VehiclePresets) {
       const searchInput = document.getElementById('f-preset-search');
       const dropdown = document.getElementById('preset-dropdown');
