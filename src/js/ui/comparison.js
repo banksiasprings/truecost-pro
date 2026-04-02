@@ -154,14 +154,7 @@ const Comparison = {
 
     html += '</div>'; // end card
 
-    // Category legend (only shown for Breakdown tab)
-    html += '<div id="chart-legend" style="display:flex;flex-wrap:wrap;gap:6px 14px;padding:6px 0 12px">';
-    activeCategories.forEach(function(c) {
-      html += '<div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary)">';
-      html += '<span style="width:10px;height:10px;border-radius:2px;background:' + CHART_COLORS[c.key] + ';flex-shrink:0"></span>';
-      html += c.label + '</div>';
-    });
-    html += '</div>';
+
 
     container.innerHTML = html;
 
@@ -183,9 +176,7 @@ const Comparison = {
           if (el) el.style.display = tab === targetTab ? '' : 'none';
         });
 
-        // Show/hide legend (only for breakdown)
-        var legendEl = document.getElementById('chart-legend');
-        if (legendEl) legendEl.style.display = targetTab === 'stacked' ? '' : 'none';
+
 
         // Resize chart after layout reflow
         requestAnimationFrame(function() {
