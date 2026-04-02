@@ -7,6 +7,18 @@ Built with vanilla JS, IndexedDB, Chart.js, and a Service Worker — no build st
 ## Live app
 
 **[https://banksiasprings.github.io/truecost/](https://banksiasprings.github.io/truecost/)**
+## Install on Android
+
+Download the latest APK from the [Releases page](https://github.com/banksiasprings/truecost/releases/tag/android-latest) and install it directly on your Android phone — no Play Store required.
+
+1. Download **truecost.apk** from Releases
+2. Open the file on your Android phone
+3. Enable **Install from unknown sources** if prompted
+4. Tap Install
+
+Requires Android 7.0+ with Chrome installed. The app runs as a Trusted Web Activity (TWA) wrapping the hosted PWA.
+
+
 
 ## Features
 

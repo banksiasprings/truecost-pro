@@ -2,7 +2,7 @@
   "name": "TRUE COST",
   "short_name": "TrueCost",
   "description": "Know what your car actually costs",
-  "start_url": "/",
+  "start_url": "/truecost/",
   "display": "standalone",
   "background_color": "#FAFAF8",
   "theme_color": "#2D5016",
@@ -38,5 +38,6 @@
       "text": "text",
       "title": "title"
     }
-  }
+  },
+  "scope": "/truecost/"
 }

@@ -1,0 +1,91 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+
+      - name: Install Bubblewrap CLI
+        run: npm install -g @bubblewrap/cli
+
+      - name: Generate keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android.keystore \
+            -keyalg RSA \
+            -alias android \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass android \
+            -keypass android \
+            -dname "CN=TrueCost, OU=Development, O=BanksiaSprings, L=Adelaide, ST=SA, C=AU"
+
+      - name: Init TWA project
+        run: |
+          mkdir twa-project
+          cp twa-manifest.json twa-project/twa-manifest.json
+          cp android.keystore twa-project/android.keystore
+          cd twa-project
+          bubblewrap init \
+            --manifest https://banksiasprings.github.io/truecost/manifest.json \
+            --directory .
+
+      - name: Build APK
+        run: |
+          cd twa-project
+          bubblewrap build --skipPwaValidation
+
+      - name: Locate and copy APK
+        run: |
+          find twa-project -name "*.apk" | head -5
+          APK=$(find twa-project -name "*.apk" | head -1)
+          cp "$APK" truecost.apk
+          echo "APK size: $(du -sh truecost.apk)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: truecost-android-apk
+          path: truecost.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: 'TRUE COST - Android App'
+          body: |
+            ## Install TRUE COST on Android
+
+            1. Download **truecost.apk** below
+            2. Open the file on your Android phone
+            3. If prompted, enable **Install from unknown sources** in Settings
+            4. Tap **Install**
+
+            Requires Android 7.0+ with Chrome installed.
+            Direct APK install - no Play Store required.
+          files: truecost.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
