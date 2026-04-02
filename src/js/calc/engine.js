@@ -48,10 +48,15 @@ function calculateCosts(vehicle, scenario) {
   const parkingPerKm  = km > 0 ? parkingTotal / km : 0;
   const tollsPerKm    = km > 0 ? tollsTotal   / km : 0;
 
-  // Lost capital (opportunity cost on purchase price)
+  // Lost capital (opportunity cost on cash outlay only)
+  // When financed, only the cash portion (price minus loan) has opportunity cost;
+  // the borrowed portion's cost is already captured in financeInterest.
   const oppRate          = (scenario.opportunityCostRate || 4.5) / 100;
   const onRoadCost       = vehicle.onRoadCost || vehicle.purchasePrice;
-  const lostCapitalPerYear = onRoadCost * oppRate;
+  const cashOutlay       = (vehicle.financed && vehicle.loanAmount > 0)
+    ? Math.max(0, onRoadCost - vehicle.loanAmount)
+    : onRoadCost;
+  const lostCapitalPerYear = cashOutlay * oppRate;
   const lostCapitalTotal   = lostCapitalPerYear * scenario.years;
   const lostCapitalPerKm   = km > 0 ? lostCapitalTotal / km : 0;
 
