@@ -6,7 +6,7 @@ function calcRegistration(vehicle, scenario) {
   // Always prefer state-based calculation — gives accurate cylinder/weight rates
   // and ensures existing vehicles with stored defaults get recalculated properly.
   if (vehicle.state) {
-    const calculated = calculateStateRegistration(vehicle.state, vehicle.cylinders, vehicle.tarenWeightKg);
+    const calculated = calculateStateRegistration(vehicle.state, vehicle.cylinders, vehicle.tarenWeightKg, vehicle.fuelType);
     if (calculated && calculated.total > 0) {
       annualCost = calculated.total;
     }

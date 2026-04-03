@@ -7,14 +7,19 @@ const AustraliaData = {
 
   // ── Registration annual costs by state (light vehicle, under 4.5t) ──
   // Calculated based on cylinders or tare weight depending on state
-  // Base rates current as of 2024-2025 financial year
+  // QLD rates updated 1 April 2026 (qld.gov.au/transport/registration/fees/cost)
+  // Other states current as of 2024-2025 financial year — update annually
   registration: {
     QLD: {
-      // Cylinder-based (4-cyl, 6-cyl, 8-cyl+ bands)
+      // Cylinder-based. EVs/PHEVs/steam are in the '1–3 cyl/electric' band (cheapest).
+      // base = registration fee + traffic improvement fee ($65.05); ctp = avg CTP insurance
+      // Source: qld.gov.au/transport/registration/fees/cost (1 April 2026 rates)
       cylinders: {
-        4: { base: 257, ctp: 400 },    // 4-cyl
-        6: { base: 381, ctp: 400 },    // 6-cyl
-        8: { base: 511, ctp: 400 },    // 8-cyl+
+        electric: { base: 358, ctp: 409 }, // EV / PHEV / steam / 1–3 cyl  ($293.20 + $65.05 reg, ~$409 CTP)
+        4:        { base: 438, ctp: 409 }, // 4-cyl                          ($372.85 + $65.05 reg)
+        6:        { base: 655, ctp: 409 }, // 5–6-cyl                        ($590.35 + $65.05 reg)
+        8:        { base: 892, ctp: 409 }, // 7–8-cyl                        ($826.75 + $65.05 reg)
+        12:       { base: 1035, ctp: 409 },// 9–12-cyl                       ($969.65 + $65.05 reg)
       },
     },
     NSW: {
@@ -29,11 +34,13 @@ const AustraliaData = {
       },
     },
     VIC: {
-      // Cylinder-based (no CTP, TAC levy included)
+      // Cylinder-based (TAC levy included, no separate CTP line)
+      // EVs pay the lowest cylinder band in VIC
       cylinders: {
-        4: { base: 396, ctp: 0 },     // 4-cyl
-        6: { base: 478, ctp: 0 },     // 6-cyl
-        8: { base: 614, ctp: 0 },     // 8-cyl+
+        electric: { base: 396, ctp: 0 }, // EV / PHEV — same as 4-cyl in VIC (2024-25)
+        4: { base: 396, ctp: 0 },        // 4-cyl
+        6: { base: 478, ctp: 0 },        // 6-cyl
+        8: { base: 614, ctp: 0 },        // 8-cyl+
       },
     },
     SA: {
@@ -55,28 +62,31 @@ const AustraliaData = {
       },
     },
     ACT: {
-      // Combined vehicle value + emissions
-      // Simplified as cylinder-based for consistency
+      // Value + emissions based — simplified as cylinder bands
+      // ACT waives registration fees for EVs (zero-emission vehicles)
       cylinders: {
-        4: { base: 274, ctp: 0 },     // 4-cyl
-        6: { base: 360, ctp: 0 },     // 6-cyl
-        8: { base: 450, ctp: 0 },     // 8-cyl+
+        electric: { base: 0, ctp: 0 }, // EV — ACT waives rego for zero-emission vehicles
+        4: { base: 274, ctp: 0 },      // 4-cyl
+        6: { base: 360, ctp: 0 },      // 6-cyl
+        8: { base: 450, ctp: 0 },      // 8-cyl+
       },
     },
     TAS: {
       // Cylinder-based
       cylinders: {
-        4: { base: 195, ctp: 340 },   // 4-cyl
-        6: { base: 260, ctp: 340 },   // 6-cyl
-        8: { base: 340, ctp: 340 },   // 8-cyl+
+        electric: { base: 195, ctp: 340 }, // EV — lowest band (2024-25)
+        4: { base: 195, ctp: 340 },        // 4-cyl
+        6: { base: 260, ctp: 340 },        // 6-cyl
+        8: { base: 340, ctp: 340 },        // 8-cyl+
       },
     },
     NT: {
       // Relatively flat structure, cylinder-influenced
       cylinders: {
-        4: { base: 172, ctp: 300 },   // 4-cyl
-        6: { base: 214, ctp: 300 },   // 6-cyl
-        8: { base: 258, ctp: 300 },   // 8-cyl+
+        electric: { base: 172, ctp: 300 }, // EV — lowest band (2024-25)
+        4: { base: 172, ctp: 300 },        // 4-cyl
+        6: { base: 214, ctp: 300 },        // 6-cyl
+        8: { base: 258, ctp: 300 },        // 8-cyl+
       },
     },
   },
@@ -124,17 +134,22 @@ const AustraliaData = {
 
 };
 
-// Function to calculate registration cost based on state and vehicle params
+// Function to calculate registration cost based on state and vehicle params.
+// fuelType: 'petrol'|'diesel'|'hybrid'|'phev'|'electric'|'lpg' — used to route EVs/PHEVs
 // Returns { base, ctp, total } in AUD
-function calculateStateRegistration(state, cylinders, tarenWeightKg) {
+function calculateStateRegistration(state, cylinders, tarenWeightKg, fuelType) {
   if (!state) return null;
 
   const regoData = AustraliaData.registration[state];
   if (!regoData) return null;
 
+  // Electric vehicles (BEV) and plug-in hybrids (PHEV) are treated as
+  // the EV/zero-emission band in states that have one.
+  const isEV = fuelType === 'electric' || fuelType === 'phev';
+
   let base = 0, ctp = 0;
 
-  // Weight-based states (NSW, WA)
+  // Weight-based states (NSW, WA) — EVs just use their actual tare weight
   if (regoData.weight) {
     const weight = tarenWeightKg || 1400; // default middle estimate
     const weights = Object.keys(regoData.weight)
@@ -147,14 +162,16 @@ function calculateStateRegistration(state, cylinders, tarenWeightKg) {
       ctp = band.data.ctp;
     }
   }
-  // Engine capacity based (SA)
+  // Engine capacity based (SA) — EVs get lowest cc band
   else if (regoData.cc) {
-    const cc = cylinders ? (cylinders <= 4 ? 1300 : cylinders <= 6 ? 1900 : 2600) : 1800; // estimate cc from cyl
+    const cc = isEV ? 0
+      : cylinders ? (cylinders <= 4 ? 1300 : cylinders <= 6 ? 1900 : 2600) : 1800;
     const ccBands = Object.keys(regoData.cc)
       .map(c => ({ limit: parseInt(c), data: regoData.cc[c] }))
       .sort((a, b) => a.limit - b.limit);
 
-    const band = ccBands.find(c => cc <= c.limit);
+    // EVs use lowest band; ICE vehicles find the matching band
+    const band = isEV ? ccBands[0] : ccBands.find(c => cc <= c.limit);
     if (band) {
       base = band.data.base;
       ctp = band.data.ctp;
@@ -162,13 +179,20 @@ function calculateStateRegistration(state, cylinders, tarenWeightKg) {
   }
   // Cylinder-based states (QLD, VIC, ACT, TAS, NT)
   else if (regoData.cylinders) {
-    const cyl = cylinders || 4; // default to 4-cyl
-    let cylBand = 4;
-    if (cyl >= 8) cylBand = 8;
-    else if (cyl >= 6) cylBand = 6;
-    else cylBand = 4;
+    let cylData;
+    if (isEV && regoData.cylinders['electric']) {
+      // EVs/PHEVs get their own 'electric' band (e.g. QLD 1-3 cyl/electric rate)
+      cylData = regoData.cylinders['electric'];
+    } else {
+      const cyl = cylinders || 4; // ICE: default to 4-cyl if not specified
+      let cylBand = 4;
+      if (cyl >= 12) cylBand = 12;
+      else if (cyl >= 8) cylBand = 8;
+      else if (cyl >= 6) cylBand = 6;
+      else cylBand = 4;
+      cylData = regoData.cylinders[cylBand] || regoData.cylinders[4];
+    }
 
-    const cylData = regoData.cylinders[cylBand];
     if (cylData) {
       base = cylData.base;
       ctp = cylData.ctp;
