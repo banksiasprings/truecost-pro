@@ -31,7 +31,7 @@
   ],
   "screenshots": [],
   "share_target": {
-    "action": "/?share=1",
+    "action": "/truecost/?share=1",
     "method": "GET",
     "params": {
       "url": "url",

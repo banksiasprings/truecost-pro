@@ -29,16 +29,10 @@ const Forms = {
   renderImportEntry() {
     const container = document.getElementById('vehicle-form-container');
     container.innerHTML = VehicleImport.renderEntryScreen();
-    document.getElementById('import-manual-btn')?.addEventListener('click', () => {
-      this.renderStep(0);
-    });
-    document.getElementById('import-paste-btn')?.addEventListener('click', () => {
-      container.innerHTML = VehicleImport.renderPasteScreen();
-      this._bindPasteEvents(container);
-    });
 
-    document.getElementById('import-url-btn')?.addEventListener('click', () => {
-      container.innerHTML = VehicleImport.renderUrlScreen();
+    // Helper: open the URL import screen, optionally with a pre-filled URL
+    const openUrlScreen = (prefillUrl) => {
+      container.innerHTML = VehicleImport.renderUrlScreen(prefillUrl || '');
       document.getElementById('import-url-back-btn')?.addEventListener('click', () => {
         this.renderImportEntry();
       });
@@ -55,6 +49,50 @@ const Forms = {
         }, (err) => {
           if (btn) { btn.textContent = 'Import Car Details'; btn.disabled = false; }
           App.toast(err || 'Import failed', 'error');
+        });
+      });
+    };
+
+    document.getElementById('import-manual-btn')?.addEventListener('click', () => {
+      this.renderStep(0);
+    });
+    document.getElementById('import-paste-btn')?.addEventListener('click', () => {
+      container.innerHTML = VehicleImport.renderPasteScreen();
+      this._bindPasteEvents(container);
+    });
+    document.getElementById('import-url-btn')?.addEventListener('click', async () => {
+      // Check clipboard at the moment the user taps the URL button
+      const clipUrl = await VehicleImport.detectClipboardUrl();
+      openUrlScreen(clipUrl);
+    });
+
+    // Async clipboard check — populate the banner on the entry screen if a URL is found
+    VehicleImport.detectClipboardUrl().then((clipUrl) => {
+      if (!clipUrl) return;
+      const banner  = document.getElementById('import-clip-banner');
+      const urlEl   = document.getElementById('import-clip-url');
+      const clipBtn = document.getElementById('import-clip-btn');
+      if (!banner || !urlEl || !clipBtn) return;
+      // Show the hostname + truncated path so the user can recognise the link
+      try {
+        const parsed = new URL(clipUrl);
+        urlEl.textContent = parsed.hostname + parsed.pathname.slice(0, 60) + (parsed.pathname.length > 60 ? '…' : '');
+      } catch (e) {
+        urlEl.textContent = clipUrl.slice(0, 80);
+      }
+      banner.style.display = '';
+      clipBtn.addEventListener('click', () => {
+        // Immediately kick off the proxy import — no extra screen needed
+        clipBtn.textContent = 'Fetching…';
+        clipBtn.disabled = true;
+        VehicleImport.fromProxyUrl(clipUrl, (data) => {
+          VehicleImport.applyToVehicle(data, this._vehicle);
+          App.toast('Car details imported!', 'success');
+          this.renderStep(0);
+        }, (err) => {
+          // Fall back to the URL screen with the URL pre-filled
+          App.toast(err || 'Import failed — check the URL', 'error');
+          openUrlScreen(clipUrl);
         });
       });
     });

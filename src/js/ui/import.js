@@ -142,8 +142,28 @@ var VehicleImport = (function () {
     return vehicle;
   }
 
+  // Checks the clipboard for a URL and returns it, or null.
+  // Uses Clipboard API (requires focus + permission on first user gesture).
+  async function detectClipboardUrl() {
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.readText) return null;
+      var text = (await navigator.clipboard.readText() || '').trim();
+      if (text && /^https?:\/\//i.test(text)) return text;
+      return null;
+    } catch (e) {
+      return null; // Permission denied or not supported — fail silently
+    }
+  }
+
   function renderEntryScreen() {
+    // Clipboard banner is hidden on initial render; forms.js populates it async
     return '<div class="import-entry">' +
+      // Hidden clipboard-detect banner — shown by forms.js if a URL is found
+      '<div id="import-clip-banner" style="display:none;background:rgba(56,191,255,0.09);border:1px solid rgba(56,191,255,0.28);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4)">' +
+        '<div style="font-size:var(--font-size-sm);font-weight:600;margin-bottom:4px">📋 Copied link detected</div>' +
+        '<div id="import-clip-url" style="font-size:11px;color:var(--color-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:var(--space-3)"></div>' +
+        '<button class="btn btn-primary btn-full" id="import-clip-btn" style="font-size:var(--font-size-sm)">Import this listing ↗</button>' +
+      '</div>' +
       '<h3 style="margin-bottom:var(--space-4)">Import a Vehicle Listing</h3>' +
       '<p style="color:var(--color-text-muted);margin-bottom:var(--space-5)">' +
         'Choose how you want to bring in car details from a listing site.' +
@@ -182,14 +202,23 @@ var VehicleImport = (function () {
   }
 
 
-  function renderUrlScreen() {
+  // prefillUrl: optional URL string pre-populated in the input (from clipboard or share sheet)
+  function renderUrlScreen(prefillUrl) {
+    var clipNote = prefillUrl
+      ? '<div style="background:rgba(56,191,255,0.09);border:1px solid rgba(56,191,255,0.28);border-radius:var(--radius-md);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);font-size:var(--font-size-sm)">' +
+          '📋 <strong>Link pre-filled from your clipboard</strong> — tap Import to fetch the details.' +
+        '</div>'
+      : '';
+    var safeUrl = prefillUrl ? prefillUrl.replace(/"/g, '&quot;') : '';
     return [
       '<div class="import-url">',
       '  <h3 style="margin-bottom:var(--space-3)">Import from URL</h3>',
       '  <p style="color:var(--color-text-muted);margin-bottom:var(--space-4);font-size:var(--font-size-sm)">',
       '    Copy the link from any Carsales listing and paste it below. Works on every device.',
       '  </p>',
+      clipNote,
       '  <input type="url" id="import-url-input" placeholder="https://www.carsales.com.au/cars/details/…"',
+      '    value="' + safeUrl + '"',
       '    style="width:100%;padding:var(--space-3);border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:var(--font-size-sm);box-sizing:border-box;font-family:inherit;margin-bottom:var(--space-4)">',
       '  <button class="btn btn-primary btn-full" id="import-url-fetch-btn">',
       '    Import Car Details',
@@ -234,5 +263,6 @@ var VehicleImport = (function () {
     fromProxyUrl:            fromProxyUrl,
     renderUrlScreen:         renderUrlScreen,
     renderPasteScreen:       renderPasteScreen,
+    detectClipboardUrl:      detectClipboardUrl,
   };
 })();
