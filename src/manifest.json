@@ -4,7 +4,7 @@
   "description": "Know what your car actually costs",
   "start_url": "/truecost/",
   "display": "standalone",
-  "background_color": "#FAFAF8",
+  "background_color": "#08101E",
   "theme_color": "#08101E",
   "orientation": "portrait",
   "icons": [
