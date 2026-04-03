@@ -1,0 +1,807 @@
+const Database = {
+  state: {
+    searchQuery: '',
+    selectedFuelTypes: [],
+    selectedCategories: [],
+    sortBy: 'name',
+    filteredVehicles: []
+  },
+
+  init() {
+    this.state = {
+      searchQuery: '',
+      selectedFuelTypes: [],
+      selectedCategories: [],
+      sortBy: 'name',
+      filteredVehicles: []
+    };
+    this.filterAndSort();
+  },
+
+  filterAndSort() {
+    let vehicles = window.VehiclePresets.all || [];
+
+    // Apply search filter
+    if (this.state.searchQuery) {
+      const query = this.state.searchQuery.toLowerCase();
+      vehicles = vehicles.filter(v =>
+        (v.make && v.make.toLowerCase().includes(query)) ||
+        (v.model && v.model.toLowerCase().includes(query)) ||
+        (v.variant && v.variant.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply fuel type filter
+    if (this.state.selectedFuelTypes.length > 0) {
+      vehicles = vehicles.filter(v =>
+        this.state.selectedFuelTypes.includes(v.fuelType)
+      );
+    }
+
+    // Apply category filter
+    if (this.state.selectedCategories.length > 0) {
+      vehicles = vehicles.filter(v =>
+        this.state.selectedCategories.includes(v.category)
+      );
+    }
+
+    // Apply sorting
+    vehicles = this.sortVehicles(vehicles);
+
+    this.state.filteredVehicles = vehicles;
+  },
+
+  sortVehicles(vehicles) {
+    const sorted = [...vehicles];
+
+    switch (this.state.sortBy) {
+      case 'price-low':
+        sorted.sort((a, b) => (a.purchasePrice || 0) - (b.purchasePrice || 0));
+        break;
+      case 'price-high':
+        sorted.sort((a, b) => (b.purchasePrice || 0) - (a.purchasePrice || 0));
+        break;
+      case 'economy':
+        sorted.sort((a, b) => {
+          const aConsump = a.fuelConsumption || a.evConsumptionKwh || Infinity;
+          const bConsump = b.fuelConsumption || b.evConsumptionKwh || Infinity;
+          return aConsump - bConsump;
+        });
+        break;
+      case 'name':
+      default:
+        sorted.sort((a, b) => {
+          const aName = (a.make || '') + (a.model || '');
+          const bName = (b.make || '') + (b.model || '');
+          return aName.localeCompare(bName);
+        });
+    }
+
+    return sorted;
+  },
+
+  getStats() {
+    const all = window.VehiclePresets.all || [];
+    const evs = all.filter(v => v.fuelType === 'Electric').length;
+    const prices = all
+      .filter(v => v.purchasePrice)
+      .map(v => v.purchasePrice)
+      .sort((a, b) => a - b);
+
+    return {
+      total: all.length,
+      evCount: evs,
+      minPrice: prices.length > 0 ? prices[0] : 0,
+      maxPrice: prices.length > 0 ? prices[prices.length - 1] : 0
+    };
+  },
+
+  formatPrice(price) {
+    return new Intl.NumberFormat('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 0
+    }).format(price || 0);
+  },
+
+  formatConsumption(vehicle) {
+    if (vehicle.fuelType === 'Electric') {
+      return vehicle.evRangeKm ? `${vehicle.evRangeKm}km range` : 'N/A';
+    }
+    return vehicle.fuelConsumption ? `${vehicle.fuelConsumption}L/100km` : 'N/A';
+  },
+
+  getFuelTypeBadgeClass(fuelType) {
+    const classes = {
+      'Petrol': 'badge-petrol',
+      'Diesel': 'badge-diesel',
+      'Hybrid': 'badge-hybrid',
+      'PHEV': 'badge-hybrid',
+      'Electric': 'badge-ev'
+    };
+    return classes[fuelType] || 'badge-petrol';
+  },
+
+  async handleAddToCompare(preset) {
+    try {
+      const vehicle = createVehicle();
+      VehicleImport.applyPreset(preset, vehicle);
+      await saveVehicle(vehicle);
+      App.toast(preset.year + ' ' + preset.make + ' ' + preset.model + ' added!', 'success');
+      Router.navigate('vehicles');
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      App.toast('Error adding vehicle', 'error');
+    }
+  },
+
+  async handleViewDetails(preset) {
+    try {
+      const vehicle = createVehicle();
+      VehicleImport.applyPreset(preset, vehicle);
+      await saveVehicle(vehicle);
+      Router.navigate('vehicle-detail', { id: vehicle.id });
+    } catch (error) {
+      console.error('Error viewing details:', error);
+      App.toast('Error loading details', 'error');
+    }
+  },
+
+  renderQuickStats(container) {
+    const stats = this.getStats();
+    const statsHtml = `
+      <div class="database-quick-stats">
+        <div class="stat-item">
+          <div class="stat-value">${stats.total}</div>
+          <div class="stat-label">Total Vehicles</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${this.formatPrice(stats.minPrice)} – ${this.formatPrice(stats.maxPrice)}</div>
+          <div class="stat-label">Price Range</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">${stats.evCount}</div>
+          <div class="stat-label">Electric Vehicles</div>
+        </div>
+      </div>
+    `;
+    container.innerHTML += statsHtml;
+  },
+
+  renderSearchBar(container) {
+    const searchHtml = `
+      <div class="database-search">
+        <input
+          type="text"
+          id="database-search"
+          class="database-search-input"
+          placeholder="Search by make, model, variant..."
+          value="${this.state.searchQuery}"
+        >
+      </div>
+    `;
+    container.innerHTML += searchHtml;
+
+    const searchInput = container.querySelector('#database-search');
+    searchInput.addEventListener('input', (e) => {
+      this.state.searchQuery = e.target.value;
+      this.filterAndSort();
+      this.render();
+    });
+  },
+
+  renderFuelTypeFilters(container) {
+    const fuelTypes = ['All', 'Petrol', 'Diesel', 'Hybrid', 'PHEV', 'Electric'];
+    const filtersHtml = `
+      <div class="database-filters">
+        <div class="filter-group">
+          <div class="filter-label">Fuel Type</div>
+          <div class="filter-chips">
+            ${fuelTypes.map(type => {
+              const isSelected = type === 'All'
+                ? this.state.selectedFuelTypes.length === 0
+                : this.state.selectedFuelTypes.includes(type);
+              return `
+                <button
+                  class="filter-chip ${isSelected ? 'active' : ''}"
+                  data-fuel-type="${type}"
+                >
+                  ${type}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    container.innerHTML += filtersHtml;
+
+    const chips = container.querySelectorAll('.filter-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        const fuelType = e.target.dataset.fuelType;
+        if (fuelType === 'All') {
+          this.state.selectedFuelTypes = [];
+        } else {
+          if (this.state.selectedFuelTypes.includes(fuelType)) {
+            this.state.selectedFuelTypes = this.state.selectedFuelTypes.filter(t => t !== fuelType);
+          } else {
+            this.state.selectedFuelTypes.push(fuelType);
+          }
+        }
+        this.filterAndSort();
+        this.render();
+      });
+    });
+  },
+
+  renderCategoryTabs(container) {
+    const categories = ['All', 'Ute', 'SUV', 'Large SUV', 'Luxury SUV', 'Small Car', 'Medium/Large Car', 'Luxury Car', 'EV', 'Sports Car', 'Van/People Mover'];
+    const tabsHtml = `
+      <div class="database-category-tabs">
+        <div class="tabs-scroll">
+          ${categories.map(cat => {
+            const isSelected = cat === 'All'
+              ? this.state.selectedCategories.length === 0
+              : this.state.selectedCategories.includes(cat);
+            return `
+              <button
+                class="category-tab ${isSelected ? 'active' : ''}"
+                data-category="${cat}"
+              >
+                ${cat}
+              </button>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+    container.innerHTML += tabsHtml;
+
+    const tabs = container.querySelectorAll('.category-tab');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const category = e.target.dataset.category;
+        if (category === 'All') {
+          this.state.selectedCategories = [];
+        } else {
+          if (this.state.selectedCategories.includes(category)) {
+            this.state.selectedCategories = this.state.selectedCategories.filter(c => c !== category);
+          } else {
+            this.state.selectedCategories.push(category);
+          }
+        }
+        this.filterAndSort();
+        this.render();
+      });
+    });
+  },
+
+  renderSortDropdown(container) {
+    const sortHtml = `
+      <div class="database-sort">
+        <label for="sort-select">Sort by:</label>
+        <select id="sort-select" class="sort-select">
+          <option value="name" ${this.state.sortBy === 'name' ? 'selected' : ''}>Name A–Z</option>
+          <option value="price-low" ${this.state.sortBy === 'price-low' ? 'selected' : ''}>Price: Low → High</option>
+          <option value="price-high" ${this.state.sortBy === 'price-high' ? 'selected' : ''}>Price: High → Low</option>
+          <option value="economy" ${this.state.sortBy === 'economy' ? 'selected' : ''}>Fuel Economy</option>
+        </select>
+      </div>
+    `;
+    container.innerHTML += sortHtml;
+
+    const sortSelect = container.querySelector('#sort-select');
+    sortSelect.addEventListener('change', (e) => {
+      this.state.sortBy = e.target.value;
+      this.filterAndSort();
+      this.render();
+    });
+  },
+
+  renderResultsHeader(container) {
+    const total = (window.VehiclePresets.all || []).length;
+    const showing = this.state.filteredVehicles.length;
+    const headerHtml = `
+      <div class="database-results-header">
+        <span class="results-count">Showing ${showing} of ${total} vehicles</span>
+      </div>
+    `;
+    container.innerHTML += headerHtml;
+  },
+
+  renderVehicleCards(container) {
+    if (this.state.filteredVehicles.length === 0) {
+      const emptyHtml = `
+        <div class="database-empty">
+          <p>No vehicles found. Try adjusting your filters.</p>
+        </div>
+      `;
+      container.innerHTML += emptyHtml;
+      return;
+    }
+
+    const cardsHtml = `
+      <div class="database-grid">
+        ${this.state.filteredVehicles.map((vehicle, idx) => `
+          <div class="vehicle-card card">
+            <div class="card-header">
+              <div class="vehicle-title">
+                <div class="vehicle-year">${vehicle.year || 'N/A'}</div>
+                <div class="vehicle-name">${vehicle.make || ''} ${vehicle.model || ''}</div>
+              </div>
+              <div class="vehicle-badge">
+                <span class="badge ${this.getFuelTypeBadgeClass(vehicle.fuelType)}">
+                  ${vehicle.fuelType || 'Petrol'}
+                </span>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="vehicle-variant">${vehicle.variant || ''}</div>
+
+              <div class="vehicle-specs">
+                <div class="spec-item">
+                  <span class="spec-label">Price</span>
+                  <span class="spec-value">${this.formatPrice(vehicle.purchasePrice)}</span>
+                </div>
+                <div class="spec-item">
+                  <span class="spec-label">${vehicle.fuelType === 'Electric' ? 'Range' : 'Consumption'}</span>
+                  <span class="spec-value">${this.formatConsumption(vehicle)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <button
+                class="btn btn-secondary btn-pill btn-sm database-add-compare"
+                data-preset-index="${idx}"
+              >
+                Add to Compare
+              </button>
+              <button
+                class="btn btn-ghost btn-pill btn-sm database-view-details"
+                data-preset-index="${idx}"
+              >
+                View Details
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.innerHTML += cardsHtml;
+
+    // Attach event listeners
+    container.querySelectorAll('.database-add-compare').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.presetIndex);
+        const preset = this.state.filteredVehicles[idx];
+        this.handleAddToCompare(preset);
+      });
+    });
+
+    container.querySelectorAll('.database-view-details').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const idx = parseInt(e.target.dataset.presetIndex);
+        const preset = this.state.filteredVehicles[idx];
+        this.handleViewDetails(preset);
+      });
+    });
+  },
+
+  render() {
+    const container = document.querySelector('#database-container');
+    if (!container) {
+      console.error('Database container not found');
+      return;
+    }
+
+    container.innerHTML = '';
+    container.classList.add('database-view');
+
+    // Render sections in order
+    this.renderQuickStats(container);
+    this.renderSearchBar(container);
+    this.renderFuelTypeFilters(container);
+    this.renderCategoryTabs(container);
+    this.renderSortDropdown(container);
+    this.renderResultsHeader(container);
+    this.renderVehicleCards(container);
+
+    // Inject styles
+    this.injectStyles();
+  },
+
+  injectStyles() {
+    // Check if styles already injected
+    if (document.querySelector('#database-styles')) {
+      return;
+    }
+
+    const styleEl = document.createElement('style');
+    styleEl.id = 'database-styles';
+    styleEl.textContent = `
+      .database-view {
+        padding: var(--space-4, 1.5rem);
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .database-quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--space-3, 1rem);
+        margin-bottom: var(--space-5, 2rem);
+        padding: var(--space-4, 1.5rem);
+        background: var(--color-bg-subtle, #f8f9fa);
+        border-radius: var(--radius-lg, 12px);
+      }
+
+      .stat-item {
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: var(--font-size-base, 1rem);
+        font-weight: 600;
+        color: var(--color-primary, #0066cc);
+        margin-bottom: var(--space-1, 0.25rem);
+      }
+
+      .stat-label {
+        font-size: var(--font-size-xs, 0.75rem);
+        color: var(--color-text-muted, #6b7280);
+      }
+
+      .database-search {
+        margin-bottom: var(--space-4, 1.5rem);
+      }
+
+      .database-search-input {
+        width: 100%;
+        padding: var(--space-3, 1rem);
+        font-size: var(--font-size-base, 1rem);
+        border: 1px solid var(--color-border, #e5e7eb);
+        border-radius: var(--radius-md, 8px);
+        background: var(--color-surface, #ffffff);
+        color: var(--color-text, #1f2937);
+        box-sizing: border-box;
+      }
+
+      .database-search-input::placeholder {
+        color: var(--color-text-muted, #6b7280);
+      }
+
+      .database-search-input:focus {
+        outline: none;
+        border-color: var(--color-primary, #0066cc);
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+      }
+
+      .database-filters {
+        margin-bottom: var(--space-4, 1.5rem);
+      }
+
+      .filter-group {
+        margin-bottom: var(--space-3, 1rem);
+      }
+
+      .filter-label {
+        display: block;
+        font-size: var(--font-size-sm, 0.875rem);
+        font-weight: 500;
+        color: var(--color-text, #1f2937);
+        margin-bottom: var(--space-2, 0.5rem);
+      }
+
+      .filter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2, 0.5rem);
+      }
+
+      .filter-chip {
+        padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+        font-size: var(--font-size-sm, 0.875rem);
+        border: 1px solid var(--color-border, #e5e7eb);
+        border-radius: 20px;
+        background: var(--color-surface, #ffffff);
+        color: var(--color-text, #1f2937);
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .filter-chip:hover {
+        background: var(--color-bg-subtle, #f8f9fa);
+      }
+
+      .filter-chip.active {
+        background: var(--color-primary, #0066cc);
+        color: white;
+        border-color: var(--color-primary, #0066cc);
+      }
+
+      .database-category-tabs {
+        margin-bottom: var(--space-4, 1.5rem);
+        overflow-x: auto;
+      }
+
+      .tabs-scroll {
+        display: flex;
+        gap: var(--space-2, 0.5rem);
+        padding-bottom: var(--space-2, 0.5rem);
+      }
+
+      .category-tab {
+        padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+        font-size: var(--font-size-sm, 0.875rem);
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--color-text-muted, #6b7280);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+      }
+
+      .category-tab:hover {
+        color: var(--color-text, #1f2937);
+      }
+
+      .category-tab.active {
+        color: var(--color-primary, #0066cc);
+        border-bottom-color: var(--color-primary, #0066cc);
+      }
+
+      .database-sort {
+        margin-bottom: var(--space-4, 1.5rem);
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+      }
+
+      .database-sort label {
+        font-size: var(--font-size-sm, 0.875rem);
+        color: var(--color-text, #1f2937);
+        font-weight: 500;
+      }
+
+      .sort-select {
+        padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+        font-size: var(--font-size-sm, 0.875rem);
+        border: 1px solid var(--color-border, #e5e7eb);
+        border-radius: var(--radius-md, 8px);
+        background: var(--color-surface, #ffffff);
+        color: var(--color-text, #1f2937);
+        cursor: pointer;
+      }
+
+      .sort-select:focus {
+        outline: none;
+        border-color: var(--color-primary, #0066cc);
+      }
+
+      .database-results-header {
+        margin-bottom: var(--space-4, 1.5rem);
+        padding: var(--space-2, 0.5rem) 0;
+        border-bottom: 1px solid var(--color-border, #e5e7eb);
+      }
+
+      .results-count {
+        font-size: var(--font-size-sm, 0.875rem);
+        color: var(--color-text-muted, #6b7280);
+      }
+
+      .database-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--space-4, 1.5rem);
+        margin-bottom: var(--space-6, 2.5rem);
+      }
+
+      @media (max-width: 768px) {
+        .database-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .database-quick-stats {
+          grid-template-columns: 1fr;
+        }
+
+        .database-view {
+          padding: var(--space-3, 1rem);
+        }
+
+        .tabs-scroll {
+          flex-wrap: wrap;
+        }
+      }
+
+      .vehicle-card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: var(--color-bg-card, #ffffff);
+        border: 1px solid var(--color-border, #e5e7eb);
+        border-radius: var(--radius-lg, 12px);
+        overflow: hidden;
+        transition: all 0.2s ease;
+      }
+
+      .vehicle-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .card-header {
+        padding: var(--space-4, 1.5rem);
+        border-bottom: 1px solid var(--color-border, #e5e7eb);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: var(--space-2, 0.5rem);
+      }
+
+      .vehicle-title {
+        flex: 1;
+      }
+
+      .vehicle-year {
+        font-size: var(--font-size-xs, 0.75rem);
+        color: var(--color-text-muted, #6b7280);
+        margin-bottom: var(--space-1, 0.25rem);
+      }
+
+      .vehicle-name {
+        font-size: var(--font-size-base, 1rem);
+        font-weight: 600;
+        color: var(--color-text, #1f2937);
+      }
+
+      .vehicle-badge {
+        flex-shrink: 0;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+        font-size: var(--font-size-xs, 0.75rem);
+        font-weight: 500;
+        border-radius: 4px;
+      }
+
+      .badge-petrol {
+        background-color: #fef3c7;
+        color: #92400e;
+      }
+
+      .badge-diesel {
+        background-color: #dbeafe;
+        color: #0c4a6e;
+      }
+
+      .badge-hybrid {
+        background-color: #d1fae5;
+        color: #065f46;
+      }
+
+      .badge-ev {
+        background-color: #c7d2fe;
+        color: #312e81;
+      }
+
+      .card-body {
+        padding: var(--space-4, 1.5rem);
+        flex: 1;
+      }
+
+      .vehicle-variant {
+        font-size: var(--font-size-sm, 0.875rem);
+        color: var(--color-text-secondary, #4b5563);
+        margin-bottom: var(--space-3, 1rem);
+      }
+
+      .vehicle-specs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-3, 1rem);
+      }
+
+      .spec-item {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .spec-label {
+        font-size: var(--font-size-xs, 0.75rem);
+        color: var(--color-text-muted, #6b7280);
+        margin-bottom: var(--space-1, 0.25rem);
+      }
+
+      .spec-value {
+        font-size: var(--font-size-base, 1rem);
+        font-weight: 600;
+        color: var(--color-text, #1f2937);
+      }
+
+      .card-footer {
+        padding: var(--space-4, 1.5rem);
+        border-top: 1px solid var(--color-border, #e5e7eb);
+        display: flex;
+        gap: var(--space-2, 0.5rem);
+      }
+
+      .btn {
+        padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+        font-size: var(--font-size-sm, 0.875rem);
+        border: none;
+        border-radius: var(--radius-md, 8px);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+      }
+
+      .btn-pill {
+        border-radius: 20px;
+      }
+
+      .btn-sm {
+        padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+        font-size: var(--font-size-xs, 0.75rem);
+      }
+
+      .btn-primary {
+        background: var(--color-primary, #0066cc);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        opacity: 0.9;
+      }
+
+      .btn-secondary {
+        background: var(--color-bg-subtle, #f8f9fa);
+        color: var(--color-text, #1f2937);
+        border: 1px solid var(--color-border, #e5e7eb);
+      }
+
+      .btn-secondary:hover {
+        background: var(--color-bg-secondary, #f3f4f6);
+      }
+
+      .btn-ghost {
+        background: transparent;
+        color: var(--color-primary, #0066cc);
+        border: 1px solid var(--color-primary, #0066cc);
+      }
+
+      .btn-ghost:hover {
+        background: rgba(0, 102, 204, 0.05);
+      }
+
+      .database-empty {
+        padding: var(--space-6, 2.5rem) var(--space-4, 1.5rem);
+        text-align: center;
+        color: var(--color-text-muted, #6b7280);
+        background: var(--color-bg-subtle, #f8f9fa);
+        border-radius: var(--radius-lg, 12px);
+      }
+
+      .database-empty p {
+        margin: 0;
+        font-size: var(--font-size-base, 1rem);
+      }
+    `;
+
+    document.head.appendChild(styleEl);
+  }
+};
+
+// Export for use
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Database;
+}
