@@ -10,6 +10,8 @@ const VehicleCard = {
     'Servicing':     '#AF52DE',
     'Tyres':         '#5AC8FA',
     'Lost capital':  '#FF6B35',
+    'Roadside':      '#32ADE6',
+    'Finance':       '#BF5AF2',
   },
 
   async renderList() {
@@ -123,6 +125,8 @@ const VehicleCard = {
       ['Servicing',    costs.total.servicing],
       ['Tyres',        costs.total.tyres],
       ['Lost capital', costs.total.lostCapital],
+      ['Roadside',     costs.total.roadside   || 0],
+      ['Finance',      costs.total.finance    || 0],
     ].filter(([, v]) => v > 0);
 
     const total = rows.reduce((s, [, v]) => s + v, 0);

@@ -26,7 +26,11 @@ function calcFuel(vehicle, scenario) {
       pubRate  = (vehicle.evPublicTariff    || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate)) / 100;
     }
     const effectiveRate = (homePct * homeRate) + (pubPct * pubRate); // $/kWh
-    const consumption   = vehicle.evConsumptionKwh || 18;            // kWh/100km
+    // Derive consumption from battery/range if explicit value not set
+    const derivedKwh  = (vehicle.evBatteryKwh && vehicle.evRangeKm)
+      ? (vehicle.evBatteryKwh / vehicle.evRangeKm * 100)
+      : 18;
+    const consumption = vehicle.evConsumptionKwh || derivedKwh;      // kWh/100km
     costPerKm = (consumption / 100) * effectiveRate;                 // AUD/km
 
   } else if (vehicle.fuelType === "phev") {
@@ -44,7 +48,10 @@ function calcFuel(vehicle, scenario) {
       pRate = (vehicle.evPublicTariff   || _fuelDefault("evPublicRate", AustraliaData.fuel.evPublicRate)) / 100;
     }
     const blendedEv   = (hPct * hRate) + (pPct * pRate); // $/kWh
-    const evConsump   = vehicle.evConsumptionKwh || 18;
+    const derivedPhev = (vehicle.evBatteryKwh && vehicle.evRangeKm)
+      ? (vehicle.evBatteryKwh / vehicle.evRangeKm * 100)
+      : 18;
+    const evConsump   = vehicle.evConsumptionKwh || derivedPhev;
     const evCostPerKm = (evConsump / 100) * blendedEv;
     const fuelPrice = vehicle.fuelPricePerLitre || _fuelDefault("ulp91", AustraliaData.fuel.unleaded);
     const petrolCostPerKm = (vehicle.fuelConsumption / 100) * (fuelPrice / 100);

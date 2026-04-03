@@ -29,6 +29,9 @@ const Forms = {
   renderImportEntry() {
     const container = document.getElementById('vehicle-form-container');
     container.innerHTML = VehicleImport.renderEntryScreen();
+    // Hide the step-progress dots — they don't apply on the import entry screen
+    const stepsEl = document.getElementById('form-steps');
+    if (stepsEl) stepsEl.style.visibility = 'hidden';
 
     // Helper: open the URL import screen, optionally with a pre-filled URL
     const openUrlScreen = (prefillUrl) => {
@@ -60,10 +63,16 @@ const Forms = {
       container.innerHTML = VehicleImport.renderPasteScreen();
       this._bindPasteEvents(container);
     });
-    document.getElementById('import-url-btn')?.addEventListener('click', async () => {
-      // Check clipboard at the moment the user taps the URL button
-      const clipUrl = await VehicleImport.detectClipboardUrl();
-      openUrlScreen(clipUrl);
+    document.getElementById('import-url-btn')?.addEventListener('click', () => {
+      // Render the URL screen immediately — never block on clipboard permission
+      openUrlScreen('');
+      // Async: try to pre-fill the input from clipboard (silently ignored if permission denied)
+      VehicleImport.detectClipboardUrl().then(clipUrl => {
+        if (clipUrl) {
+          const inp = document.getElementById('import-url-input');
+          if (inp && !inp.value) inp.value = clipUrl;
+        }
+      });
     });
 
     // Async clipboard check — populate the banner on the entry screen if a URL is found
@@ -116,6 +125,9 @@ const Forms = {
 
   renderStep(step) {
     this._step = step;
+    // Ensure step indicator is visible when on a form step
+    const stepsEl = document.getElementById('form-steps');
+    if (stepsEl) stepsEl.style.visibility = '';
     const steps = document.querySelectorAll('.step-dot');
     steps.forEach((dot, i) => {
       dot.classList.toggle('active', i === step);

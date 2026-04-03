@@ -166,6 +166,14 @@ const App = {
     // Rego grid
     const regoGrid = document.getElementById("rates-rego-grid");
     if (regoGrid) {
+      // Ensure the note is only inserted once
+      if (!document.getElementById("rego-rates-note")) {
+        const note = document.createElement("p");
+        note.id = "rego-rates-note";
+        note.style.cssText = "font-size:var(--font-size-xs);color:var(--color-text-muted);margin-bottom:var(--space-3);line-height:1.4";
+        note.textContent = "Indicative defaults only. Vehicle estimates use your car\u2019s cylinders, weight and fuel type \u2014 amounts will differ from these figures.";
+        regoGrid.parentElement.insertBefore(note, regoGrid);
+      }
       regoGrid.innerHTML = STATES.map(s => {
         const path = "registration." + s + ".total";
         const val  = rates?.registration?.[s]?.total || 0;

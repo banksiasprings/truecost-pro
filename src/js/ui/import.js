@@ -71,7 +71,11 @@ var VehicleImport = (function () {
     if (!text || text.trim().length < 10) return null;
     var d = { src: 'paste', raw: text };
 
-    var ymm = text.match(/\b(20\d{2}|19\d{2})\s+([A-Z][a-zA-Z\-]+)\s+([A-Z][a-zA-Z\-]+)/);
+    // Match year + make + model on the first non-empty line only to avoid grabbing
+    // tokens from other fields.  Model allows an optional second word (e.g. "Model 3",
+    // "GLC 300", "Model S") where the second token starts with a letter or digit.
+    var firstLine = (text.trim().split('\n')[0] || '').trim();
+    var ymm = firstLine.match(/\b(20\d{2}|19\d{2})\s+([A-Z][a-zA-Z\-]+)\s+([A-Z0-9][a-zA-Z0-9\-]+(?:\s+[A-Z0-9][a-zA-Z0-9\-]+)?)/);
     if (ymm) { d.year = parseInt(ymm[1], 10); d.make = ymm[2]; d.model = ymm[3]; }
 
     var price = text.match(/\$\s*([\d,]+)/);
@@ -110,8 +114,10 @@ var VehicleImport = (function () {
     var battMatch = text.match(/[Bb]attery[\s\S]{0,30}?([\d.]+)\s*[Kk][Ww][Hh]/);
     if (battMatch) d.battery = parseFloat(battMatch[1]);
 
-    var rangeMatch = text.match(/(?:[Rr]ange|WLTP(?:\s+[Rr]ange)?)[\s\S]{0,30}?(\d{2,4})\s*km/);
-    if (rangeMatch) d.range = parseInt(rangeMatch[1], 10);
+    // Require either "WLTP Range" or "Range:" (with colon) to avoid matching
+    // the word "Range" from model names like "Long Range" against unrelated numbers.
+    var rangeMatch = text.match(/(?:WLTP\s+[Rr]ange|[Rr]ange\s*:)\s*([\d,]+)\s*km/);
+    if (rangeMatch) d.range = parseInt(rangeMatch[1].replace(/,/g, ''), 10);
 
     var ancapMatch = text.match(/ANCAP[\s\S]{0,30}?(\d)[\s-]*(?:star|\/5)/i);
     if (!ancapMatch) ancapMatch = text.match(/(\d)[\s-]*[Ss]tar\s+ANCAP/i);

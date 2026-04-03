@@ -9,7 +9,8 @@ const DETAIL_PALETTE = [
   '#7B5EA7', // Servicing
   '#3A8C6E', // Tyres
   '#8C6E3A', // Lost capital
-  '#5E8C3A', // Finance
+  '#32ADE6', // Roadside assist
+  '#BF5AF2', // Finance interest
 ];
 
 const VehicleDetail = {
@@ -83,6 +84,8 @@ const VehicleDetail = {
       { label: 'Tyres',          value: costs.total.tyres                                   },
       { label: 'Lost capital',   value: costs.total.lostCapital                             },
     ].filter(r => r.value > 0);
+    if ((costs.total.roadside || 0) > 0)
+      rows.push({ label: 'Roadside assist', value: costs.total.roadside });
     if ((costs.total.finance || 0) > 0)
       rows.push({ label: 'Finance interest', value: costs.total.finance });
 

@@ -314,7 +314,8 @@ const Comparison = {
       data: {
         labels: yearRange,
         datasets: yearlyData.map(function(d, idx) {
-          var col = idx === 0 ? '#1877F2' : '#FF6B35';
+          var SPARK_COLS = ['#1877F2', '#FF6B35', '#34C759', '#AF52DE'];
+          var col = SPARK_COLS[idx % SPARK_COLS.length];
           return {
             data: d.byYear.map(function(v) { return Math.round(v); }),
             borderColor: col,
