@@ -12,6 +12,7 @@ const DETAIL_PALETTE = [
   '#32ADE6', // Roadside assist
   '#BF5AF2', // Finance interest
   '#C0392B', // Repair reserve
+  '#16A085', // Stamp duty
 ];
 
 const VehicleDetail = {
@@ -91,6 +92,11 @@ const VehicleDetail = {
       rows.push({ label: 'Finance interest', value: costs.total.finance });
     if ((costs.total.repairReserve || 0) > 0)
       rows.push({ label: 'Repair reserve ⚠️', value: costs.total.repairReserve, isRepair: true });
+    if ((costs.total.stampDuty || 0) > 0) {
+      const sdMeta = (costs.meta && costs.meta.stampDuty) || {};
+      const sdLabel = sdMeta.hasEvConcession ? 'Stamp duty 🟢' : 'Stamp duty';
+      rows.push({ label: sdLabel, value: costs.total.stampDuty, isStampDuty: true });
+    }
 
     const total = costs.summary.totalOwnershipCost;
 
@@ -143,6 +149,17 @@ const VehicleDetail = {
         '</div>' +
       '</div>';
     }).join('') +
+
+    // ── Stamp duty EV concession note ──
+    + (((costs.meta && costs.meta.stampDuty && costs.meta.stampDuty.hasEvConcession) && costs.meta.stampDuty.savedVsStandard > 0)
+      ? '<div style="margin-top:var(--space-3);padding:var(--space-3) var(--space-4);' +
+          'background:rgba(52,199,89,0.07);border:1px solid rgba(52,199,89,0.28);' +
+          'border-radius:var(--radius-md);font-size:11px;color:var(--color-text-muted);line-height:1.5">' +
+          '🟢 <strong style="color:#27AE60">EV stamp duty concession applied</strong> — saved ' +
+          fmtAUD(costs.meta.stampDuty.savedVsStandard) + ' vs standard rate. ' +
+          (costs.meta.stampDuty.note || '') +
+        '</div>'
+      : '') +
 
     // ── Repair reserve explanation (if applicable) ──
     ((costs.total.repairReserve || 0) > 0

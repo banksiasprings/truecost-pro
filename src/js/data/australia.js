@@ -91,27 +91,31 @@ const AustraliaData = {
       },
     },
     NT: {
-      // Relatively flat structure, cylinder-influenced
+      // EVs: Free registration (fee waiver) until 30 June 2027 per NT Gov policy.
+      // CTP insurance component may still apply separately — excluded here as it varies.
+      // Source: transport.nt.gov.au (2024-25)
       cylinders: {
-        electric: { base: 172, ctp: 300 }, // EV — lowest band (2024-25)
-        4: { base: 172, ctp: 300 },        // 4-cyl
-        6: { base: 214, ctp: 300 },        // 6-cyl
-        8: { base: 258, ctp: 300 },        // 8-cyl+
+        electric: { base: 0,   ctp: 0   }, // EV — fee waiver until June 2027
+        4:        { base: 172, ctp: 300 }, // 4-cyl
+        6:        { base: 214, ctp: 300 }, // 6-cyl
+        8:        { base: 258, ctp: 300 }, // 8-cyl+
       },
     },
   },
 
-  // ── Stamp duty rates by state (% of vehicle value) ──
-  // Rate varies by value band — simplified single rate here
+  // ── Stamp duty rates by state — standard (ICE/PHEV) and EV-specific ──
+  // EV concessions current as of April 2026. PHEVs generally get standard rates
+  // (most state concessions target BEVs / zero-emission only).
+  // Sources: state revenue office sites; verify before purchase.
   stampDuty: {
-    QLD: { rate: 0.031, notes: '3.1% for vehicles under $100k' },
-    NSW: { rate: 0.030, notes: '3% general rate' },
-    VIC: { rate: 0.055, notes: '5.5% general rate' },
-    SA:  { rate: 0.040, notes: '4% general rate' },
-    WA:  { rate: 0.030, notes: '3% general rate' },
-    ACT: { rate: 0.030, notes: '3% general rate' },
-    TAS: { rate: 0.030, notes: '3% general rate' },
-    NT:  { rate: 0.030, notes: '3% general rate' },
+    QLD: { rate: 0.031, evRate: 0.020, evNote: '2% for EVs (vs 3.1% standard) up to $100k' },
+    NSW: { rate: 0.030, evRate: 0.030, evNote: 'No EV concession — standard 3%' },
+    VIC: { rate: 0.055, evRate: 0.042, evNote: '$8.40 per $200 value (4.2%) for EVs (vs 5.5% standard)' },
+    SA:  { rate: 0.040, evRate: 0.025, evNote: 'Reduced rate for EVs (~2.5%)' },
+    WA:  { rate: 0.028, evRate: 0.028, evNote: 'No EV concession' },
+    ACT: { rate: 0.030, evRate: 0.000, evNote: 'Full stamp duty exemption for zero-emission vehicles' },
+    TAS: { rate: 0.030, evRate: 0.030, evNote: 'No EV concession' },
+    NT:  { rate: 0.030, evRate: null,  evNote: 'Up to $1,500 concession for EVs ≤$50k dutiable value' },
   },
 
   // ── Fuel price defaults (cents per litre) ──
@@ -255,6 +259,48 @@ function calculateInsuranceEstimate(baseAnnual, state, driverAge) {
   }
 
   return Math.round(estimate);
+}
+
+/**
+ * Calculate stamp duty for a vehicle purchase.
+ * Applies EV concessions where applicable as of April 2026.
+ * @param {string} state  — e.g. 'QLD', 'NSW', 'VIC'
+ * @param {number} price  — purchase price in AUD
+ * @param {string} fuelType — 'electric'|'phev'|'petrol'|'diesel'|'hybrid'
+ * @returns {{ duty: number, savedVsStandard: number, hasEvConcession: boolean, note: string }}
+ */
+function calculateStampDuty(state, price, fuelType) {
+  if (!state || !price) return { duty: 0, savedVsStandard: 0, hasEvConcession: false, note: '' };
+  const sd = AustraliaData.stampDuty[state];
+  if (!sd) return { duty: 0, savedVsStandard: 0, hasEvConcession: false, note: '' };
+
+  const isEV = fuelType === 'electric';  // PHEVs get standard rate (post-Apr 2025 policy)
+  const standardDuty = Math.round(price * sd.rate);
+
+  let duty = standardDuty;
+  let hasEvConcession = false;
+
+  if (isEV) {
+    if (state === 'ACT') {
+      duty = 0;  // Full exemption
+      hasEvConcession = true;
+    } else if (state === 'NT') {
+      // Up to $1,500 concession for vehicles ≤$50,000
+      const concession = price <= 50000 ? 1500 : 0;
+      duty = Math.max(0, standardDuty - concession);
+      hasEvConcession = price <= 50000;
+    } else if (sd.evRate !== undefined && sd.evRate !== null && sd.evRate !== sd.rate) {
+      duty = Math.round(price * sd.evRate);
+      hasEvConcession = true;
+    }
+  }
+
+  return {
+    duty,
+    savedVsStandard: Math.max(0, standardDuty - duty),
+    hasEvConcession,
+    note: isEV ? (sd.evNote || '') : '',
+  };
 }
 
 // Freeze to prevent accidental mutation

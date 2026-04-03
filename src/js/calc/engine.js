@@ -41,6 +41,15 @@ function calculateCosts(vehicle, scenario) {
   const servicingPerKm  = km > 0 ? servicingTotal / km : 0;
   const servicingPerYear = scenario.years > 0 ? servicingTotal / scenario.years : 0;
 
+  // Stamp duty — one-off upfront cost, part of true total cost of ownership.
+  // EVs receive state-specific concessions (ACT exempt, QLD 2%, VIC 4.2%, etc.)
+  const _stampDutyResult = (typeof calculateStampDuty === 'function' && vehicle.state && vehicle.purchasePrice)
+    ? calculateStampDuty(vehicle.state, vehicle.purchasePrice, vehicle.fuelType)
+    : { duty: 0, savedVsStandard: 0, hasEvConcession: false, note: '' };
+  const stampDutyTotal  = _stampDutyResult.duty;
+  const stampDutyPerKm  = km > 0 ? stampDutyTotal / km : 0;
+  const stampDutyPerYear = scenario.years > 0 ? stampDutyTotal / scenario.years : 0;
+
   // Unexpected repair reserve — scales with vehicle age + odometer at purchase.
   // Used vehicles only. Formula: $80/yr per year of age + $7 per 1,000km over 30,000km.
   // Represents the statistical likelihood of unscheduled repairs (not catastrophic failure —
@@ -100,7 +109,7 @@ function calculateCosts(vehicle, scenario) {
   const grandTotal = depreciation.total + fuel.total + battery.total
     + tyreCostTotal + registration.total + insurance.total
     + servicingTotal + roadsideTotal + parkingTotal + tollsTotal
-    + lostCapitalTotal + financeTotal + repairReserveTotal;
+    + lostCapitalTotal + financeTotal + repairReserveTotal + stampDutyTotal;
   const costPerKm  = km > 0 ? grandTotal / km : 0;
   const costPerYear = scenario.years > 0 ? grandTotal / scenario.years : 0;
 
@@ -127,6 +136,7 @@ function calculateCosts(vehicle, scenario) {
       financeInterest: financeTotal,
       finance:         financeTotal,   // alias used in detail.js
       repairReserve:   repairReserveTotal,
+      stampDuty:       stampDutyTotal,
     },
     // Full per-category breakdown with perKm / perYear
     breakdown: {
@@ -143,13 +153,15 @@ function calculateCosts(vehicle, scenario) {
       lostCapital:     { total: lostCapitalTotal,    perKm: lostCapitalPerKm,    perYear: lostCapitalPerYear },
       financeInterest: { total: financeTotal,        perKm: financePerKm,        perYear: financePerYear },
       repairReserve:   { total: repairReserveTotal,  perKm: repairReservePerKm,  perYear: repairReservePerYear },
+      stampDuty:       { total: stampDutyTotal,       perKm: stampDutyPerKm,      perYear: stampDutyPerYear },
     },
-    // Extra metadata for the disclaimer
+    // Extra metadata for the disclaimer and detail view
     meta: {
       isUsed: _isUsed,
       vehicleAgeAtPurchase: _ageAtPurchase,
       purchaseOdometer: _odoKm,
       repairReservePerYear,
+      stampDuty: _stampDutyResult,
     },
   };
 }
