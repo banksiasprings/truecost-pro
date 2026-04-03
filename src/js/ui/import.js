@@ -75,13 +75,22 @@ var VehicleImport = (function () {
     // tokens from other fields.  Model allows an optional second word (e.g. "Model 3",
     // "GLC 300", "Model S") where the second token starts with a letter or digit.
     var firstLine = (text.trim().split('\n')[0] || '').trim();
-    var ymm = firstLine.match(/\b(20\d{2}|19\d{2})\s+([A-Z][a-zA-Z\-]+)\s+([A-Z0-9][a-zA-Z0-9\-]+(?:\s+[A-Z0-9][a-zA-Z0-9\-]+)?)/);
+    // Allow single-char second words like "3" (Model 3), "S" (Model S), "X" etc.
+    var ymm = firstLine.match(/\b(20\d{2}|19\d{2})\s+([A-Z][a-zA-Z\-]+)\s+([A-Z0-9][a-zA-Z0-9\-]*(?:\s+[A-Z0-9][a-zA-Z0-9\-]*)?)/);
     if (ymm) { d.year = parseInt(ymm[1], 10); d.make = ymm[2]; d.model = ymm[3]; }
 
     var price = text.match(/\$\s*([\d,]+)/);
     if (price) d.price = parseFloat(price[1].replace(/,/g, ''));
 
-    var odo = text.match(/[Oo]dometer[\s\S]{0,20}?([\d,]+)\s*km/i) || text.match(/([\d,]+)\s*km\b/);
+    // Odo: prefer labelled "Odometer" value; for fallback, skip WLTP/Range lines
+    // to avoid capturing EV range (e.g. "WLTP Range: 614 km") as the odometer.
+    var odo = text.match(/[Oo]dometer[\s\S]{0,20}?([\d,]+)\s*km/i);
+    if (!odo) {
+      var odoText = text.split('\n').filter(function(l) {
+        return !/(?:WLTP|[Rr]ange\s*:)/i.test(l);
+      }).join('\n');
+      odo = odoText.match(/([\d,]+)\s*km\b/);
+    }
     if (odo) d.odo = parseInt(odo[1].replace(/,/g, ''), 10);
 
     var fc = text.match(/([\d.]+)\s*[Ll]\/100\s*km/);
