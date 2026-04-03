@@ -157,6 +157,9 @@ const Forms = {
       document.getElementById('finance-fields').style.display = e.target.checked ? '' : 'none';
     });
 
+    // Swipe gesture support for navigating between pages
+    this._bindSwipeEvents(step);
+
     // EV charging live effective-rate calculator (step 1)
     if (step === 1) {
       const updateEffRate = () => {
@@ -284,6 +287,45 @@ const Forms = {
         }
       });
     }
+  },
+
+  _bindSwipeEvents(step) {
+    const container = document.getElementById('vehicle-form-container');
+    if (!container) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    const SWIPE_THRESHOLD = 50; // Minimum distance in pixels
+
+    const handleTouchStart = (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e) => {
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+
+      // Only process horizontal swipes (not vertical)
+      if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+      // Swipe right (go back)
+      if (diffX < -SWIPE_THRESHOLD && step > 0) {
+        this.collectStep(step);
+        this.renderStep(step - 1);
+      }
+      // Swipe left (go next)
+      else if (diffX > SWIPE_THRESHOLD && step < 3) {
+        if (this.collectStep(step)) {
+          this.renderStep(step + 1);
+        }
+      }
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, false);
+    container.addEventListener('touchend', handleTouchEnd, false);
   },
 
   collectStep(step) {
