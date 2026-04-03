@@ -24,23 +24,29 @@ const AustraliaData = {
     },
     NSW: {
       // Weight-based (tare weight in kg)
-      // Current NSW Roads & Maritime sliding scale (2024-25)
+      // NSW Roads & Maritime: $82 flat admin fee + vehicle tax by tare weight (private use)
+      // Rates from 1 July 2025 (+3.22% indexation). CTP (green slip) is separate; ~$550 metro avg.
+      // Source: nsw.gov.au/driving-boating-and-transport/vehicle-registration/fees-concessions-and-forms/vehicle-registration-fees
       weight: {
-        975:   { base: 394, ctp: 500 },   // up to 975 kg
-        1154:  { base: 419, ctp: 500 },   // 976-1154 kg
-        1504:  { base: 470, ctp: 500 },   // 1155-1504 kg
-        2054:  { base: 548, ctp: 500 },   // 1505-2054 kg
-        9999:  { base: 661, ctp: 500 },   // 2055+ kg
+        975:   { base: 352, ctp: 550 },   // up to 975 kg  ($270 tax + $82 admin = $352)
+        1154:  { base: 395, ctp: 550 },   // 976–1,154 kg  ($313 + $82 = $395)
+        1504:  { base: 462, ctp: 550 },   // 1,155–1,504 kg ($380 + $82 = $462) — common family car
+        2504:  { base: 661, ctp: 550 },   // 1,505–2,504 kg ($579 + $82 = $661) — SUV / ute range
+        9999:  { base: 917, ctp: 550 },   // 2,505+ kg     ($835 + $82 = $917)
       },
     },
     VIC: {
-      // Cylinder-based (TAC levy included, no separate CTP line)
-      // EVs pay the lowest cylinder band in VIC
+      // VIC rego = flat rego fee + Transport Accident Charge (TAC) + CTP (bundled).
+      // No cylinder variation — all bands set to metro total (~$931).
+      // EVs receive a $100 discount on the rego component → metro EV total ~$831.
+      // Metro (high risk zone): $343 rego + $534 TAC + $53 CTP ≈ $931
+      // Outer metro: ~$871 | Rural: ~$801 — defaulting to metro (most VIC users).
+      // Source: dapc.com.au/blog/victorian-car-registration-fees-2025-breakdown
       cylinders: {
-        electric: { base: 396, ctp: 0 }, // EV / PHEV — same as 4-cyl in VIC (2024-25)
-        4: { base: 396, ctp: 0 },        // 4-cyl
-        6: { base: 478, ctp: 0 },        // 6-cyl
-        8: { base: 614, ctp: 0 },        // 8-cyl+
+        electric: { base: 831, ctp: 0 }, // EV / PHEV — $100 EV discount applied, metro
+        4:  { base: 931, ctp: 0 },       // 4-cyl (all cylinders same in VIC)
+        6:  { base: 931, ctp: 0 },
+        8:  { base: 931, ctp: 0 },
       },
     },
     SA: {
@@ -54,11 +60,14 @@ const AustraliaData = {
     },
     WA: {
       // Weight-based (tare weight in kg)
+      // WA rego = $28.64 per 100 kg tare + Motor Injury Insurance $504.70 + admin $9.50
+      // CTP field here carries MII + admin ($514) since there's no separate line.
+      // Source: dapc.com.au/blog/western-australia-car-registration-fees-2025-breakdown
       weight: {
-        1200: { base: 264, ctp: 380 },    // up to 1200 kg
-        1500: { base: 316, ctp: 380 },    // 1201-1500 kg
-        1800: { base: 368, ctp: 380 },    // 1501-1800 kg
-        9999: { base: 420, ctp: 380 },    // 1801+ kg
+        1200: { base: 344, ctp: 514 },    // up to 1200 kg  ($28.64×12=$344 + $514 = $858)
+        1500: { base: 430, ctp: 514 },    // 1201–1500 kg   ($28.64×15=$430 + $514 = $944)
+        1800: { base: 516, ctp: 514 },    // 1501–1800 kg   ($28.64×18=$516 + $514 = $1,030)
+        9999: { base: 573, ctp: 514 },    // 1801+ kg       ($28.64×20=$573 + $514 = $1,087 typical)
       },
     },
     ACT: {
@@ -72,12 +81,13 @@ const AustraliaData = {
       },
     },
     TAS: {
-      // Cylinder-based
+      // Cylinder-based. Total annual for a 4-cyl ≈ $626. Updated from ~$535.
+      // Source: transport.tas.gov.au/fees_forms/registration_fees
       cylinders: {
-        electric: { base: 195, ctp: 340 }, // EV — lowest band (2024-25)
-        4: { base: 195, ctp: 340 },        // 4-cyl
-        6: { base: 260, ctp: 340 },        // 6-cyl
-        8: { base: 340, ctp: 340 },        // 8-cyl+
+        electric: { base: 286, ctp: 340 }, // EV — lowest band (~$626 total)
+        4: { base: 286, ctp: 340 },        // 4-cyl (~$626 total)
+        6: { base: 360, ctp: 340 },        // 6-cyl (~$700 total)
+        8: { base: 440, ctp: 340 },        // 8-cyl+ (~$780 total)
       },
     },
     NT: {
@@ -121,6 +131,30 @@ const AustraliaData = {
     budget:   800,
     standard: 1400,
     premium:  2200,
+  },
+
+  // ── Insurance age multipliers (baseline = age 30–49, Canstar 2025, 67k+ quotes) ──
+  // Applied to base insurance estimate to adjust for driver age.
+  insuranceAgeMultipliers: [
+    { maxAge: 24, multiplier: 1.77 },  // <25: avg $2,700 vs $1,530 baseline
+    { maxAge: 29, multiplier: 1.35 },  // 25–29: avg $2,060
+    { maxAge: 49, multiplier: 1.00 },  // 30–49: baseline (Canstar avg $1,530)
+    { maxAge: 69, multiplier: 0.77 },  // 50–69: avg $1,180
+    { maxAge: 99, multiplier: 0.88 },  // 70+: slight increase (avg ~$1,350)
+  ],
+
+  // ── Insurance state multipliers (baseline = national average) ──
+  // Source: Canstar/Ratecity 2024 state average comprehensive premiums.
+  // VIC is significantly above average; TAS well below.
+  insuranceStateMultipliers: {
+    QLD: 0.97,
+    NSW: 1.09,
+    VIC: 1.29,
+    SA:  0.86,
+    WA:  0.90,
+    ACT: 0.93,
+    TAS: 0.81,
+    NT:  0.88,
   },
 
   // ── Default tyre costs by category ──
@@ -201,6 +235,26 @@ function calculateStateRegistration(state, cylinders, tarenWeightKg, fuelType) {
 
   const total = base + ctp;
   return { base, ctp, total };
+}
+
+// Returns an insurance estimate adjusted for driver age and state.
+// baseAnnual: the starting estimate (from insuranceCategory lookup or manual)
+// state: e.g. 'QLD', 'VIC'
+// driverAge: optional integer; omit or null to skip age adjustment
+function calculateInsuranceEstimate(baseAnnual, state, driverAge) {
+  let estimate = baseAnnual || 0;
+
+  // Apply state multiplier
+  const stateMult = state && AustraliaData.insuranceStateMultipliers[state];
+  if (stateMult) estimate = estimate * stateMult;
+
+  // Apply age multiplier if age is provided
+  if (driverAge && driverAge > 0) {
+    const ageBracket = AustraliaData.insuranceAgeMultipliers.find(b => driverAge <= b.maxAge);
+    if (ageBracket) estimate = estimate * ageBracket.multiplier;
+  }
+
+  return Math.round(estimate);
 }
 
 // Freeze to prevent accidental mutation

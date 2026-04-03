@@ -125,7 +125,7 @@ const Forms = {
 
     const weightSection = needsWeight ? `<div class="form-group"><label class="label" for="f-weight">Tare weight (kg)</label><input type="number" class="input" id="f-weight" value="${v.tarenWeightKg || ''}" placeholder="e.g. 1400" min="500" max="3000"></div>` : '';
 
-    return `<div class="card"><h2 class="card-title">Running Costs</h2>${evRegoNote}${cylSection}${weightSection}<div class="form-group"><label class="label" for="f-rego">Registration ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-rego" value="${v.registrationAnnual}" style="padding-left:32px"></div><small style="color:var(--color-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block">Calculated from cylinders/weight — edit to override</small></div><div class="form-group"><label class="label" for="f-insurance">Insurance ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-insurance" value="${v.insuranceAnnual}" style="padding-left:32px"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-svc-cost">Service cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-svc-cost" value="${v.serviceCostPerService}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-svc-km">Service interval (km)</label><input type="number" class="input" id="f-svc-km" value="${v.serviceIntervalKm}" step="1000"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-tyre-cost">Tyre set cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-tyre-cost" value="${v.tyreCostPerSet}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-tyre-km">Tyre life (km)</label><input type="number" class="input" id="f-tyre-km" value="${v.tyreLifeKm}" step="5000"></div></div></div><div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-pill" id="step-back">Back</button><button class="btn btn-primary btn-pill" id="step-next" style="flex:1">Continue</button></div>`;
+    return `<div class="card"><h2 class="card-title">Running Costs</h2>${evRegoNote}${cylSection}${weightSection}<div class="form-group"><label class="label" for="f-rego">Registration ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-rego" value="${v.registrationAnnual}" style="padding-left:32px"></div><small style="color:var(--color-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block">Calculated from cylinders/weight — edit to override</small></div><div class="form-group"><label class="label" for="f-insurance">Insurance ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-insurance" value="${v.insuranceAnnual}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-driver-age">Driver age <span style="font-weight:400;color:var(--color-text-muted);font-size:var(--font-size-xs)">(optional — improves insurance estimate)</span></label><input type="number" class="input" id="f-driver-age" value="${v.driverAge || ''}" placeholder="e.g. 28" min="16" max="99" style="max-width:140px"><small style="color:var(--color-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block">Not stored beyond this device. Adjusts estimate only.</small></div><div class="form-row"><div class="form-group"><label class="label" for="f-svc-cost">Service cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-svc-cost" value="${v.serviceCostPerService}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-svc-km">Service interval (km)</label><input type="number" class="input" id="f-svc-km" value="${v.serviceIntervalKm}" step="1000"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-tyre-cost">Tyre set cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-tyre-cost" value="${v.tyreCostPerSet}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-tyre-km">Tyre life (km)</label><input type="number" class="input" id="f-tyre-km" value="${v.tyreLifeKm}" step="5000"></div></div></div><div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-pill" id="step-back">Back</button><button class="btn btn-primary btn-pill" id="step-next" style="flex:1">Continue</button></div>`;
   },
 
   stepFinance() {
@@ -183,6 +183,21 @@ const Forms = {
       }
       // Auto-calculate on initial load
       updateRegistration();
+
+      // Driver age → insurance estimate auto-update
+      const ageEl = document.getElementById('f-driver-age');
+      const insuranceEl = document.getElementById('f-insurance');
+      if (ageEl && insuranceEl) {
+        ageEl.addEventListener('input', () => {
+          const age = parseInt(ageEl.value) || null;
+          const base = (this._vehicle?.insuranceCategory &&
+                        AustraliaData.insurance[this._vehicle.insuranceCategory])
+                     || Defaults.vehicle.insuranceAnnual;
+          const state = this._vehicle?.state || 'QLD';
+          const adjusted = calculateInsuranceEstimate(base, state, age);
+          insuranceEl.value = adjusted;
+        });
+      }
     }
 
     // EV charging live effective-rate calculator (step 1)
@@ -389,6 +404,7 @@ const Forms = {
       v.tarenWeightKg = num('f-weight');
       v.registrationAnnual = num('f-rego');
       v.insuranceAnnual = num('f-insurance');
+      v.driverAge = parseInt(val('f-driver-age')) || null;
       v.serviceCostPerService = num('f-svc-cost');
       v.serviceIntervalKm = num('f-svc-km');
       v.tyreCostPerSet = num('f-tyre-cost');

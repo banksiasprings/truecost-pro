@@ -22,7 +22,7 @@ function createVehicle(overrides = {}) {
     evChargingTariff: 30, evPublicChargingPct: 20, evPublicTariff: 60,
     phevElectricRangeKm: 0, phevElectricPct: 40,
     batteryReplacementCost: 15000, batteryWarrantyCycles: 0, batteryExpectedKm: 250000,
-    registrationAnnual: 689, insuranceAnnual: 1400, insuranceCategory: "standard",
+    registrationAnnual: 689, insuranceAnnual: 1400, insuranceCategory: "standard", driverAge: null,
     serviceIntervalKm: 10000, serviceIntervalMonths: 12, serviceCostPerService: 350,
     serviceType: "independent", tyreCostPerSet: 900, tyreLifeKm: 45000,
     roadsideAssistance: 120, parkingAnnual: 0, tollsAnnual: 0,
