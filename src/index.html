@@ -33,6 +33,10 @@
           <h1 class="page-title">My Vehicles</h1>
           <p class="page-subtitle">Compare total ownership costs</p>
         </div>
+        <button class="btn-add" id="btn-add-vehicle">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add
+        </button>
       </div>
 
       <!-- Vehicle list (populated by JS) -->
@@ -43,21 +47,17 @@
 
         <div class="cat-card">
           <div class="cat-card-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 15v-1q0-1.5 2-2.2L6.5 8.5Q8 7 10 7h4q2 0 3.5 1.5L21 11.8q2 .7 2 2.2v1q0 1.2-1.5 1.2H20"/>
-              <path d="M4 16.5H2q-1 0-1-1.5"/>
-              <circle cx="6.5" cy="17.5" r="2"/>
-              <circle cx="17.5" cy="17.5" r="2"/>
+            <svg width="24" height="18" viewBox="0 0 32 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 13.5v-2Q1 10 3 9.2L6 5.5Q7.5 4 10 4h8Q20 4 21.5 5.5L26 9.5Q29 10 30 11.5v2Q30 15 28.5 15H27M4.5 15H2Q1 15 1 13.5Z"/>
+              <circle cx="7.5" cy="15.8" r="2.8"/>
+              <circle cx="23.5" cy="15.8" r="2.8"/>
+              <line x1="11" y1="15" x2="20" y2="15"/>
             </svg>
           </div>
           <div class="cat-card-body">
             <div class="cat-card-title">Vehicle Details</div>
             <div class="cat-card-sub">Compare total ownership costs</div>
           </div>
-          <button class="btn-add" id="btn-add-first">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add
-          </button>
         </div>
 
         <p style="text-align:center;font-size:var(--font-size-sm);color:var(--color-text-muted);margin-top:var(--space-6)">
@@ -231,11 +231,11 @@
   <!-- ── Bottom Navigation ── -->
   <nav id="bottom-nav" role="navigation" aria-label="Main navigation">
     <button class="nav-btn active" data-page="vehicles" aria-label="My Vehicles">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M1 15v-1q0-1.5 2-2.2L6.5 8.5Q8 7 10 7h4q2 0 3.5 1.5L21 11.8q2 .7 2 2.2v1q0 1.2-1.5 1.2H20"/>
-        <path d="M4 16.5H2q-1 0-1-1.5"/>
-        <circle cx="6.5" cy="17.5" r="2"/>
-        <circle cx="17.5" cy="17.5" r="2"/>
+      <svg viewBox="0 0 32 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 13.5v-2Q1 10 3 9.2L6 5.5Q7.5 4 10 4h8Q20 4 21.5 5.5L26 9.5Q29 10 30 11.5v2Q30 15 28.5 15H27M4.5 15H2Q1 15 1 13.5Z"/>
+        <circle cx="7.5" cy="15.8" r="2.8"/>
+        <circle cx="23.5" cy="15.8" r="2.8"/>
+        <line x1="11" y1="15" x2="20" y2="15"/>
       </svg>
       Vehicles
     </button>
