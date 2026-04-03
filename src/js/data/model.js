@@ -35,8 +35,13 @@ function createVehicle(overrides = {}) {
 
   // Apply fuel-type-specific service defaults (only if not explicitly overridden)
   if (vehicle.fuelType === 'electric') {
-    if (!overrides.serviceIntervalKm)      vehicle.serviceIntervalKm      = 15000;  // EVs service less frequently
-    if (!overrides.serviceCostPerService)  vehicle.serviceCostPerService  = 250;    // ~$250/service (AU avg $200-400/yr)
+    // Real AU EV service data (2026): BYD 20k/12m @~$330/yr, Kia 30k/24m @~$276/yr,
+    // Hyundai 30k/24m @~$232/yr, Tesla ~$200/yr owner-reported. Generic default uses
+    // 20k/12m ("whichever first") at $300/service — at 15k/yr the annual trigger wins
+    // giving ~5 services/5yr = $1,500, close to BYD ($1,200–1,400) and Kia ($1,382).
+    if (!overrides.serviceIntervalKm)      vehicle.serviceIntervalKm      = 20000;  // 20,000 km or...
+    if (!overrides.serviceIntervalMonths)  vehicle.serviceIntervalMonths  = 12;     // ...12 months (whichever first)
+    if (!overrides.serviceCostPerService)  vehicle.serviceCostPerService  = 300;    // ~$300/service AU avg
   }
   // Hybrids/PHEVs retain ICE service schedule (still have combustion engines)
 

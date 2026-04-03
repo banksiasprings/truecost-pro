@@ -31,8 +31,12 @@ function calculateCosts(vehicle, scenario) {
   // Insurance
   const insurance = calcInsurance(vehicle, scenario);
 
-  // Servicing
-  const servicesCount   = vehicle.serviceIntervalKm > 0 ? km / vehicle.serviceIntervalKm : 0;
+  // Servicing — "whichever comes first": km trigger or time trigger, use whichever fires more often
+  // Math.max gives the larger service count, i.e. the earlier-firing trigger.
+  // If only one interval is set the other contributes 0, so max() still does the right thing.
+  const _byKm     = vehicle.serviceIntervalKm     > 0 ? km / vehicle.serviceIntervalKm                        : 0;
+  const _byMonths = vehicle.serviceIntervalMonths > 0 ? (scenario.years * 12) / vehicle.serviceIntervalMonths : 0;
+  const servicesCount   = Math.max(_byKm, _byMonths);
   const servicingTotal  = servicesCount * (vehicle.serviceCostPerService || 350);
   const servicingPerKm  = km > 0 ? servicingTotal / km : 0;
   const servicingPerYear = scenario.years > 0 ? servicingTotal / scenario.years : 0;
