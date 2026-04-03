@@ -58,10 +58,6 @@ const Forms = {
         });
       });
     });
-    document.getElementById('import-bookmarklet-btn')?.addEventListener('click', () => {
-      container.innerHTML = VehicleImport.renderBookmarkletScreen();
-      this._bindBookmarkletEvents(container);
-    });
   },
   _bindPasteEvents(container) {
     document.getElementById('import-paste-parse-btn')?.addEventListener('click', () => {
@@ -76,19 +72,6 @@ const Forms = {
       this.renderStep(0);
     });
     document.getElementById('import-paste-back-btn')?.addEventListener('click', () => {
-      this.renderImportEntry();
-    });
-  },
-  _bindBookmarkletEvents(container) {
-    document.getElementById('import-bookmarklet-copy-btn')?.addEventListener('click', () => {
-      const textarea = document.getElementById('import-bookmarklet-code');
-      if (textarea) {
-        navigator.clipboard.writeText(textarea.value)
-          .then(() => App.toast('Bookmarklet code copied!', 'success'))
-          .catch(() => { textarea.select(); document.execCommand('copy'); App.toast('Copied!', 'success'); });
-      }
-    });
-    document.getElementById('import-bookmarklet-back-btn')?.addEventListener('click', () => {
       this.renderImportEntry();
     });
   },
@@ -129,7 +112,16 @@ const Forms = {
 
   stepRunningCosts() {
     const v = this._vehicle;
-    return `<div class="card"><h2 class="card-title">Running Costs</h2><div class="form-group"><label class="label" for="f-rego">Registration ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-rego" value="${v.registrationAnnual}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-insurance">Insurance ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-insurance" value="${v.insuranceAnnual}" style="padding-left:32px"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-svc-cost">Service cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-svc-cost" value="${v.serviceCostPerService}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-svc-km">Service interval (km)</label><input type="number" class="input" id="f-svc-km" value="${v.serviceIntervalKm}" step="1000"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-tyre-cost">Tyre set cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-tyre-cost" value="${v.tyreCostPerSet}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-tyre-km">Tyre life (km)</label><input type="number" class="input" id="f-tyre-km" value="${v.tyreLifeKm}" step="5000"></div></div></div><div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-pill" id="step-back">Back</button><button class="btn btn-primary btn-pill" id="step-next" style="flex:1">Continue</button></div>`;
+    // Determine which input to show based on state
+    const state = v.state || 'QLD';
+    const needsWeight = state === 'NSW' || state === 'WA';
+    const needsCylinders = !needsWeight; // All other states use cylinders or need both
+
+    const cylSection = needsCylinders ? `<div class="form-group"><label class="label" for="f-cylinders">Engine cylinders</label><div class="select-wrapper"><select class="select" id="f-cylinders"><option value="">Select cylinders</option><option value="3" ${v.cylinders===3?'selected':''}>3-cyl</option><option value="4" ${v.cylinders===4?'selected':''}>4-cyl</option><option value="5" ${v.cylinders===5?'selected':''}>5-cyl</option><option value="6" ${v.cylinders===6?'selected':''}>6-cyl</option><option value="8" ${v.cylinders===8?'selected':''}>8-cyl</option><option value="10" ${v.cylinders===10?'selected':''}>10-cyl</option><option value="12" ${v.cylinders===12?'selected':''}>12-cyl</option></select></div></div>` : '';
+
+    const weightSection = needsWeight ? `<div class="form-group"><label class="label" for="f-weight">Tare weight (kg)</label><input type="number" class="input" id="f-weight" value="${v.tarenWeightKg || ''}" placeholder="e.g. 1400" min="500" max="3000"></div>` : '';
+
+    return `<div class="card"><h2 class="card-title">Running Costs</h2>${cylSection}${weightSection}<div class="form-group"><label class="label" for="f-rego">Registration ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-rego" value="${v.registrationAnnual}" style="padding-left:32px"></div><small style="color:var(--color-text-muted);font-size:var(--font-size-xs);margin-top:4px;display:block">Calculated from cylinders/weight — edit to override</small></div><div class="form-group"><label class="label" for="f-insurance">Insurance ($/year)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-insurance" value="${v.insuranceAnnual}" style="padding-left:32px"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-svc-cost">Service cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-svc-cost" value="${v.serviceCostPerService}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-svc-km">Service interval (km)</label><input type="number" class="input" id="f-svc-km" value="${v.serviceIntervalKm}" step="1000"></div></div><div class="form-row"><div class="form-group"><label class="label" for="f-tyre-cost">Tyre set cost ($)</label><div class="input-prefix"><span class="prefix-label">$</span><input type="number" class="input" id="f-tyre-cost" value="${v.tyreCostPerSet}" style="padding-left:32px"></div></div><div class="form-group"><label class="label" for="f-tyre-km">Tyre life (km)</label><input type="number" class="input" id="f-tyre-km" value="${v.tyreLifeKm}" step="5000"></div></div></div><div style="display:flex;gap:var(--space-3)"><button class="btn btn-secondary btn-pill" id="step-back">Back</button><button class="btn btn-primary btn-pill" id="step-next" style="flex:1">Continue</button></div>`;
   },
 
   stepFinance() {
@@ -159,6 +151,34 @@ const Forms = {
 
     // Swipe gesture support for navigating between pages
     this._bindSwipeEvents(step);
+
+    // Registration auto-calculator (step 2 only)
+    if (step === 2) {
+      const updateRegistration = () => {
+        const cylEl = document.getElementById('f-cylinders');
+        const weightEl = document.getElementById('f-weight');
+        const regoEl = document.getElementById('f-rego');
+        if (!regoEl) return;
+
+        const cyl = cylEl ? parseInt(cylEl.value) : (this._vehicle?.cylinders || null);
+        const weight = weightEl ? parseFloat(weightEl.value) : (this._vehicle?.tarenWeightKg || null);
+        const state = this._vehicle?.state || 'QLD';
+
+        const calculated = calculateStateRegistration(state, cyl, weight);
+        if (calculated && calculated.total > 0) {
+          regoEl.value = calculated.total;
+        }
+      };
+
+      if (document.getElementById('f-cylinders')) {
+        document.getElementById('f-cylinders').addEventListener('change', updateRegistration);
+      }
+      if (document.getElementById('f-weight')) {
+        document.getElementById('f-weight').addEventListener('change', updateRegistration);
+      }
+      // Auto-calculate on initial load
+      updateRegistration();
+    }
 
     // EV charging live effective-rate calculator (step 1)
     if (step === 1) {
@@ -360,6 +380,8 @@ const Forms = {
       }
       v.onRoadCost = v.purchasePrice;
     } else if (step === 2) {
+      v.cylinders = parseInt(val('f-cylinders')) || null;
+      v.tarenWeightKg = num('f-weight');
       v.registrationAnnual = num('f-rego');
       v.insuranceAnnual = num('f-insurance');
       v.serviceCostPerService = num('f-svc-cost');
