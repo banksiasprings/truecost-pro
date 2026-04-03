@@ -41,6 +41,23 @@ function calculateCosts(vehicle, scenario) {
   const servicingPerKm  = km > 0 ? servicingTotal / km : 0;
   const servicingPerYear = scenario.years > 0 ? servicingTotal / scenario.years : 0;
 
+  // Unexpected repair reserve — scales with vehicle age + odometer at purchase.
+  // Used vehicles only. Formula: $80/yr per year of age + $7 per 1,000km over 30,000km.
+  // Represents the statistical likelihood of unscheduled repairs (not catastrophic failure —
+  // that can cost far more and is called out in the disclaimer).
+  const _currentYear = new Date().getFullYear();
+  const _ageAtPurchase = Math.max(0, _currentYear - (vehicle.year || _currentYear));
+  const _odoKm = vehicle.purchaseOdometer || 0;
+  const _isUsed = (vehicle.condition || 'used') === 'used';
+  let repairReservePerYear = 0;
+  if (_isUsed) {
+    const _ageFactor = _ageAtPurchase * 80;
+    const _odoFactor = Math.max(0, (_odoKm - 30000) / 1000) * 7;
+    repairReservePerYear = Math.min(4500, _ageFactor + _odoFactor);
+  }
+  const repairReserveTotal  = repairReservePerYear * scenario.years;
+  const repairReservePerKm  = km > 0 ? repairReserveTotal / km : 0;
+
   // Roadside assistance
   const roadsideTotal = (vehicle.roadsideAssistance || 0) * scenario.years;
   const roadsidePerKm = km > 0 ? roadsideTotal / km : 0;
@@ -83,7 +100,7 @@ function calculateCosts(vehicle, scenario) {
   const grandTotal = depreciation.total + fuel.total + battery.total
     + tyreCostTotal + registration.total + insurance.total
     + servicingTotal + roadsideTotal + parkingTotal + tollsTotal
-    + lostCapitalTotal + financeTotal;
+    + lostCapitalTotal + financeTotal + repairReserveTotal;
   const costPerKm  = km > 0 ? grandTotal / km : 0;
   const costPerYear = scenario.years > 0 ? grandTotal / scenario.years : 0;
 
@@ -109,6 +126,7 @@ function calculateCosts(vehicle, scenario) {
       lostCapital:     lostCapitalTotal,
       financeInterest: financeTotal,
       finance:         financeTotal,   // alias used in detail.js
+      repairReserve:   repairReserveTotal,
     },
     // Full per-category breakdown with perKm / perYear
     breakdown: {
@@ -124,6 +142,14 @@ function calculateCosts(vehicle, scenario) {
       tolls:           { total: tollsTotal,          perKm: tollsPerKm,          perYear: vehicle.tollsAnnual   || 0 },
       lostCapital:     { total: lostCapitalTotal,    perKm: lostCapitalPerKm,    perYear: lostCapitalPerYear },
       financeInterest: { total: financeTotal,        perKm: financePerKm,        perYear: financePerYear },
+      repairReserve:   { total: repairReserveTotal,  perKm: repairReservePerKm,  perYear: repairReservePerYear },
+    },
+    // Extra metadata for the disclaimer
+    meta: {
+      isUsed: _isUsed,
+      vehicleAgeAtPurchase: _ageAtPurchase,
+      purchaseOdometer: _odoKm,
+      repairReservePerYear,
     },
   };
 }

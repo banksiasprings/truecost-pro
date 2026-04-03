@@ -11,6 +11,7 @@ const DETAIL_PALETTE = [
   '#8C6E3A', // Lost capital
   '#32ADE6', // Roadside assist
   '#BF5AF2', // Finance interest
+  '#C0392B', // Repair reserve
 ];
 
 const VehicleDetail = {
@@ -88,6 +89,8 @@ const VehicleDetail = {
       rows.push({ label: 'Roadside assist', value: costs.total.roadside });
     if ((costs.total.finance || 0) > 0)
       rows.push({ label: 'Finance interest', value: costs.total.finance });
+    if ((costs.total.repairReserve || 0) > 0)
+      rows.push({ label: 'Repair reserve ⚠️', value: costs.total.repairReserve, isRepair: true });
 
     const total = costs.summary.totalOwnershipCost;
 
@@ -125,6 +128,7 @@ const VehicleDetail = {
     });
 
     // ── Breakdown table ──
+    const meta = costs.meta || {};
     document.getElementById('detail-breakdown').innerHTML = rows.map(function(r, i) {
       var col = DETAIL_PALETTE[i % DETAIL_PALETTE.length];
       var pct = total > 0 ? ((r.value / total) * 100).toFixed(0) : 0;
@@ -138,7 +142,35 @@ const VehicleDetail = {
           '<span class="cost-value">' + fmtAUD(r.value) + '</span>' +
         '</div>' +
       '</div>';
-    }).join('');
+    }).join('') +
+
+    // ── Repair reserve explanation (if applicable) ──
+    ((costs.total.repairReserve || 0) > 0
+      ? '<div style="margin-top:var(--space-3);padding:var(--space-3) var(--space-4);' +
+          'background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.22);' +
+          'border-radius:var(--radius-md);font-size:11px;color:var(--color-text-muted);line-height:1.5">' +
+          '<strong style="color:#C0392B">⚠️ Repair reserve</strong> — estimated ' +
+          fmtAUD(meta.repairReservePerYear || 0) + '/yr based on vehicle age (' +
+          (meta.vehicleAgeAtPurchase || 0) + ' yrs) and odometer (' +
+          ((meta.purchaseOdometer || 0) / 1000).toFixed(0) + 'k km). ' +
+          'This is a rough allowance for unscheduled maintenance. ' +
+          'A single major repair — engine, transmission, gearbox, or suspension — can cost $3,000–$15,000+ and is not guaranteed by this estimate.' +
+        '</div>'
+      : '') +
+
+    // ── General disclaimer ──
+    '<div style="margin-top:var(--space-3);padding:var(--space-3) var(--space-4);' +
+      'background:var(--color-surface);border:1px solid var(--color-border);' +
+      'border-radius:var(--radius-md);font-size:11px;color:var(--color-text-muted);line-height:1.5">' +
+      '<strong>Estimates only.</strong> These figures assume all scheduled servicing is completed ' +
+      'on time, no major unexpected faults occur, and standard insurance/registration conditions apply. ' +
+      (meta.isUsed
+        ? 'Older and higher-kilometre vehicles carry greater risk of breakdowns and unscheduled repairs — ' +
+          'costs that can be significant and are <em>not</em> fully captured here. ' +
+          'A bargain purchase price may be offset by higher ongoing costs. '
+        : '') +
+      'Use this as a guide for comparison, not a financial guarantee.' +
+    '</div>';
   },
 
   _destroyChart() {
