@@ -186,11 +186,11 @@ var VehicleImport = (function () {
       '<button class="btn btn-primary btn-full" id="import-db-btn" style="margin-bottom:var(--space-3)">' +
         '&#128269; Choose from Database' +
       '</button>' +
-      '<button class="btn btn-secondary btn-full" id="import-paste-btn" style="margin-bottom:var(--space-3)">' +
-        '&#128203; Paste Listing Text' +
-      '</button>' +
       '<button class="btn btn-secondary btn-full" id="import-url-btn" style="margin-bottom:var(--space-3)">' +
         '&#128279; Paste a Carsales URL' +
+      '</button>' +
+      '<button class="btn btn-secondary btn-full" id="import-paste-btn" style="margin-bottom:var(--space-3)">' +
+        '&#128203; Paste Listing Text' +
       '</button>' +
       '<button class="btn btn-secondary btn-full" id="import-manual-btn">' +
         '&#9999;&#65039; Enter Details Manually' +
