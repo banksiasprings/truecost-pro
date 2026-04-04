@@ -20,6 +20,27 @@ const Database = {
       remainingVehicles: []
     };
     this.filterAndSort();
+    this._bindSearchDelegation();
+  },
+
+  _bindSearchDelegation() {
+    const container = document.querySelector('#database-container');
+    if (!container || container._searchDelegationBound) return;
+    container._searchDelegationBound = true;
+
+    container.addEventListener('input', (e) => {
+      if (e.target.id !== 'database-search') return;
+      const cursorPos = e.target.selectionStart;
+      this.state.searchQuery = e.target.value;
+      this.filterAndSort();
+      this.render();
+      // Restore focus + cursor so typing feels uninterrupted
+      const restored = document.querySelector('#database-search');
+      if (restored) {
+        restored.focus();
+        restored.setSelectionRange(cursorPos, cursorPos);
+      }
+    });
   },
 
   filterAndSort() {
@@ -227,13 +248,7 @@ const Database = {
       </div>
     `;
     container.insertAdjacentHTML('beforeend', searchHtml);
-
-    const searchInput = container.querySelector('#database-search');
-    searchInput.addEventListener('input', (e) => {
-      this.state.searchQuery = e.target.value;
-      this.filterAndSort();
-      this.render();
-    });
+    // Listener is attached via event delegation in bindDelegatedEvents() — survives re-renders
   },
 
   renderFuelTypeFilters(container) {
