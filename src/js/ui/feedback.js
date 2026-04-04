@@ -5,7 +5,7 @@
 // 1. Go to https://formspree.io and create a free account (target: smcnichol@outlook.com)
 // 2. Create a new form — copy the form ID from the endpoint URL
 // 3. Replace the placeholder below with your real form ID (e.g. 'xpwzgkqb')
-const FORMSPREE_ENDPOINT = 'https://formspree.io/f/REPLACE_WITH_FORM_ID';
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xkopqeny';
 
 const Feedback = {
   _selectedType: 'bug',
