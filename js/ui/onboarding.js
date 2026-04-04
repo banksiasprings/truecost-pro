@@ -194,9 +194,9 @@ const Onboarding = {
     const type = this._answers.vehicleType;
     const typeLabel = type || 'all vehicles';
     const goalMap = {
-      compare: 'We've pre-filtered the database to ' + typeLabel + '. Start comparing.',
-      ev:      'Check out the EV tab in the database — we've sorted by running cost.',
-      afford:  'Add your first vehicle and we'll break down every cost.',
+      compare: "We've pre-filtered the database to " + typeLabel + ". Start comparing.",
+      ev:      "Check out the EV tab in the database \u2014 we've sorted by running cost.",
+      afford:  "Add your first vehicle and we'll break down every cost.",
       curious: 'Browse the database and tap any car to see its full cost breakdown.',
     };
     const subtitle = goalMap[this._answers.goal] || 'Tap the Database tab to explore 200+ vehicles.';
