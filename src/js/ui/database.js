@@ -165,7 +165,7 @@ const Database = {
         </div>
       </div>
     `;
-    container.innerHTML += statsHtml;
+    container.insertAdjacentHTML('beforeend', statsHtml);
   },
 
   renderSearchBar(container) {
@@ -180,7 +180,7 @@ const Database = {
         >
       </div>
     `;
-    container.innerHTML += searchHtml;
+    container.insertAdjacentHTML('beforeend', searchHtml);
 
     const searchInput = container.querySelector('#database-search');
     searchInput.addEventListener('input', (e) => {
@@ -221,7 +221,7 @@ const Database = {
         </div>
       </div>
     `;
-    container.innerHTML += filtersHtml;
+    container.insertAdjacentHTML('beforeend', filtersHtml);
 
     const chips = container.querySelectorAll('.filter-chip');
     chips.forEach(chip => {
@@ -263,7 +263,7 @@ const Database = {
         </div>
       </div>
     `;
-    container.innerHTML += tabsHtml;
+    container.insertAdjacentHTML('beforeend', tabsHtml);
 
     const tabs = container.querySelectorAll('.category-tab');
     tabs.forEach(tab => {
@@ -296,7 +296,7 @@ const Database = {
         </select>
       </div>
     `;
-    container.innerHTML += sortHtml;
+    container.insertAdjacentHTML('beforeend', sortHtml);
 
     const sortSelect = container.querySelector('#sort-select');
     sortSelect.addEventListener('change', (e) => {
@@ -314,7 +314,7 @@ const Database = {
         <span class="results-count">Showing ${showing} of ${total} vehicles</span>
       </div>
     `;
-    container.innerHTML += headerHtml;
+    container.insertAdjacentHTML('beforeend', headerHtml);
   },
 
   renderVehicleCards(container) {
@@ -324,7 +324,7 @@ const Database = {
           <p>No vehicles found. Try adjusting your filters.</p>
         </div>
       `;
-      container.innerHTML += emptyHtml;
+      container.insertAdjacentHTML('beforeend', emptyHtml);
       return;
     }
 
@@ -377,7 +377,7 @@ const Database = {
         `).join('')}
       </div>
     `;
-    container.innerHTML += cardsHtml;
+    container.insertAdjacentHTML('beforeend', cardsHtml);
 
     // Attach event listeners
     container.querySelectorAll('.database-add-compare').forEach(btn => {
