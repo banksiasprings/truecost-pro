@@ -82,7 +82,7 @@ const Database = {
 
   getStats() {
     const all = window.VehiclePresets.all || [];
-    const evs = all.filter(v => v.fuelType === 'Electric').length;
+    const evs = all.filter(v => v.fuelType === 'electric').length;
     const prices = all
       .filter(v => v.purchasePrice)
       .map(v => v.purchasePrice)
@@ -105,7 +105,7 @@ const Database = {
   },
 
   formatConsumption(vehicle) {
-    if (vehicle.fuelType === 'Electric') {
+    if (vehicle.fuelType === 'electric') {
       return vehicle.evRangeKm ? `${vehicle.evRangeKm}km range` : 'N/A';
     }
     return vehicle.fuelConsumption ? `${vehicle.fuelConsumption}L/100km` : 'N/A';
@@ -113,11 +113,11 @@ const Database = {
 
   getFuelTypeBadgeClass(fuelType) {
     const classes = {
-      'Petrol': 'badge-petrol',
-      'Diesel': 'badge-diesel',
-      'Hybrid': 'badge-hybrid',
-      'PHEV': 'badge-hybrid',
-      'Electric': 'badge-ev'
+      'petrol': 'badge-petrol',
+      'diesel': 'badge-diesel',
+      'hybrid': 'badge-hybrid',
+      'phev': 'badge-hybrid',
+      'electric': 'badge-ev'
     };
     return classes[fuelType] || 'badge-petrol';
   },
@@ -191,22 +191,29 @@ const Database = {
   },
 
   renderFuelTypeFilters(container) {
-    const fuelTypes = ['All', 'Petrol', 'Diesel', 'Hybrid', 'PHEV', 'Electric'];
+    const fuelTypeOptions = [
+      { label: 'All', value: 'All' },
+      { label: 'Petrol', value: 'petrol' },
+      { label: 'Diesel', value: 'diesel' },
+      { label: 'Hybrid', value: 'hybrid' },
+      { label: 'PHEV', value: 'phev' },
+      { label: 'Electric', value: 'electric' }
+    ];
     const filtersHtml = `
       <div class="database-filters">
         <div class="filter-group">
           <div class="filter-label">Fuel Type</div>
           <div class="filter-chips">
-            ${fuelTypes.map(type => {
-              const isSelected = type === 'All'
+            ${fuelTypeOptions.map(option => {
+              const isSelected = option.value === 'All'
                 ? this.state.selectedFuelTypes.length === 0
-                : this.state.selectedFuelTypes.includes(type);
+                : this.state.selectedFuelTypes.includes(option.value);
               return `
                 <button
                   class="filter-chip ${isSelected ? 'active' : ''}"
-                  data-fuel-type="${type}"
+                  data-fuel-type="${option.value}"
                 >
-                  ${type}
+                  ${option.label}
                 </button>
               `;
             }).join('')}
@@ -346,7 +353,7 @@ const Database = {
                   <span class="spec-value">${this.formatPrice(vehicle.purchasePrice)}</span>
                 </div>
                 <div class="spec-item">
-                  <span class="spec-label">${vehicle.fuelType === 'Electric' ? 'Range' : 'Consumption'}</span>
+                  <span class="spec-label">${vehicle.fuelType === 'electric' ? 'Range' : 'Consumption'}</span>
                   <span class="spec-value">${this.formatConsumption(vehicle)}</span>
                 </div>
               </div>
