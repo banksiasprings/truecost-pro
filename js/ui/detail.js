@@ -35,6 +35,14 @@ const VehicleDetail = {
     const costs = calculateCosts(vehicle, scenario);
 
     // ── Full-bleed hero image ──
+    // If the saved vehicle has no imageUrl, look it up from the preset database
+    if (!vehicle.imageUrl && window.VehiclePresets && window.VehiclePresets.all) {
+      const preset = window.VehiclePresets.all.find(
+        p => p.make === vehicle.make && p.model === vehicle.model && p.imageUrl
+      );
+      if (preset) vehicle.imageUrl = preset.imageUrl;
+    }
+
     const heroEl = document.getElementById('detail-hero');
     if (heroEl) {
       if (vehicle.imageUrl) {
