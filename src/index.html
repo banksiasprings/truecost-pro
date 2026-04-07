@@ -275,7 +275,7 @@
           depreciation, fuel, insurance, registration, servicing, tyres, and lost capital.
         </p>
         <p style="font-size:var(--font-size-xs);color:var(--color-text-muted);margin-top:var(--space-4)">
-          Version 1.0 &nbsp;&middot;&nbsp; Made in Australia
+          <span id="app-version">v12</span> &nbsp;&middot;&nbsp; Made in Australia
         </p>
       </div>
     </section>
@@ -415,6 +415,13 @@
         .catch(err => console.warn('SW registration failed:', err));
     });
   }
+</script>
+<script>
+  const APP_VERSION = 'v12';
+  document.addEventListener('DOMContentLoaded', function() {
+    const el = document.getElementById('app-version');
+    if (el) el.textContent = APP_VERSION;
+  });
 </script>
 </body>
 </html>
