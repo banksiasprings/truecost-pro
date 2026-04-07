@@ -97,3 +97,35 @@ async function getAllSettings() {
     theme:               await getSetting("theme",               "dark"),
   };
 }
+
+async function exportAllData() {
+  const vehicles = await getAllVehicles();
+  const settings = await getAllSettings();
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    app: 'truecost-pro',
+    vehicles,
+    settings
+  };
+}
+
+async function importAllData(data) {
+  if (!data || data.version !== 1 || (data.app !== 'truecost-pro' && data.app !== 'truecost')) {
+    throw new Error('Invalid or incompatible backup file.');
+  }
+  // Wipe existing vehicles
+  const existing = await getAllVehicles();
+  for (const v of existing) await deleteVehicle(v.id);
+  // Restore vehicles
+  for (const v of (data.vehicles || [])) {
+    v.updatedAt = new Date().toISOString();
+    await saveVehicle(v);
+  }
+  // Restore settings
+  const s = data.settings || {};
+  const allowed = ['years', 'kmPerYear', 'state', 'opportunityCostRate', 'theme'];
+  for (const key of allowed) {
+    if (key in s) await saveSetting(key, s[key]);
+  }
+}
