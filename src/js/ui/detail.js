@@ -82,7 +82,7 @@ const VehicleDetail = {
     // ── Key stats ──
     document.getElementById('detail-stats').innerHTML = `
       <div style="grid-column:1/-1;text-align:center;padding:4px 0 18px;border-bottom:1px solid var(--color-border);margin-bottom:4px">
-        <div style="font-size:2.4rem;font-weight:900;letter-spacing:-1px;color:var(--color-text);line-height:1">${fmtAUD(costs.summary.totalOwnershipCost)}</div>
+        <div style="font-size:3rem;font-weight:900;letter-spacing:-1.5px;color:var(--color-text);line-height:1">${fmtAUD(costs.summary.totalOwnershipCost)}</div>
         <div style="font-size:11px;color:var(--color-text-muted);margin-top:5px;text-transform:uppercase;letter-spacing:0.07em">
           Total cost of ownership · ${scenario.years} years
         </div>

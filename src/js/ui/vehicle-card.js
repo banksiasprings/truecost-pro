@@ -113,7 +113,7 @@ const VehicleCard = {
 
           <!-- Total cost hero number -->
           <div style="text-align:center;padding:12px 0 10px;border-top:1px solid var(--color-border);border-bottom:1px solid var(--color-border);margin-bottom:12px">
-            <div style="font-size:2.1rem;font-weight:900;color:var(--color-text);letter-spacing:-1px;line-height:1">${totalStr}</div>
+            <div style="font-size:2.6rem;font-weight:900;color:var(--color-text);letter-spacing:-1.2px;line-height:1">${totalStr}</div>
             <div style="font-size:10px;color:var(--color-text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.06em">Total ${years}-year cost</div>
           </div>
 
