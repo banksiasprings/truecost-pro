@@ -1,52 +1,66 @@
-# TRUE COST
+# 💰 TRUE COST
 
-A Progressive Web App for calculating the true total cost of vehicle ownership over time.
+[![Live Demo](https://img.shields.io/badge/live%20demo-truecost-brightgreen)](https://banksiasprings.github.io/truecost/)
 
-Built with vanilla JS, IndexedDB, Chart.js, and a Service Worker — no build step, no frameworks.
+Calculate the true total cost of vehicle ownership in Australia. Account for depreciation, fuel, insurance, registration, servicing, tyres, stamp duty, and lost capital. Compare vehicles side-by-side with detailed breakdowns.
 
-## Live app
+## ✨ Features
 
-**[https://banksiasprings.github.io/truecost/](https://banksiasprings.github.io/truecost/)**
-## Install on Android
+- **202 Vehicle Presets** – Popular cars, trucks, and commercial vehicles across 10 categories
+- **Depreciation Calc** – Accurate loss-of-value models for different vehicle types
+- **Fuel Economy** – Compare consumption across petrol, diesel, hybrid, PHEV, and EV
+- **Insurance Quotes** – Integrated estimate tool based on vehicle and driver profile
+- **Registration** – State-specific rego costs for all Australian jurisdictions
+- **Servicing Costs** – Maintenance schedules with real pricing data
+- **Tyres & Servicing** – Detailed breakdown of consumable costs
+- **Stamp Duty** – State-specific purchase tax calculations
+- **EV Concessions** – Special incentives and rebates for electric vehicles
+- **Multi-Compare** – Compare vehicles side-by-side with charts
+- **Offline Support** – Full PWA with service worker caching
+- **Interactive Charts** – Bar and line charts showing cost trends
+- **Responsive Design** – Works on desktop, tablet, and mobile
+- **Version:** v13
 
-Download the latest APK from the [Releases page](https://github.com/banksiasprings/truecost/releases/tag/android-latest) and install it directly on your Android phone — no Play Store required.
+## 🛠️ Tech Stack
 
-1. Download **truecost.apk** from Releases
-2. Open the file on your Android phone
-3. Enable **Install from unknown sources** if prompted
-4. Tap Install
+- **Frontend:** Vanilla JavaScript (ES6+)
+- **Charting:** Chart.js for visual comparisons
+- **Storage:** IndexedDB for vehicle database
+- **PWA:** Service Worker for offline functionality
+- **Hosting:** GitHub Pages
+- **No dependencies** – Pure HTML, CSS, JavaScript
 
-Requires Android 7.0+ with Chrome installed. The app runs as a Trusted Web Activity (TWA) wrapping the hosted PWA.
+## 🚀 Getting Started
 
+### Online
+Open https://banksiasprings.github.io/truecost/ in your browser and start comparing vehicles instantly!
 
-
-## Features
-
-- Add multiple vehicles (petrol, diesel, hybrid, PHEV, EV)
-- Australian cost presets (rego, insurance, servicing, tyres by fuel type)
-- Customisable ownership scenario (years, km/year, opportunity cost rate)
-- Side-by-side comparison with bar charts and year-by-year cumulative cost lines
-- Per-vehicle detail view with donut chart and full cost breakdown
-- Works offline via Service Worker
-- Installable as a PWA on iOS/Android/desktop
-
-## Phases
-
-- [x] Phase 1 — Core data model & add/edit/delete vehicles (IndexedDB)
-- [x] Phase 2 — Comparison charts (Chart.js bar chart, 4-vehicle max)
-- [x] Phase 3 — Australian cost presets (fuel type defaults, registration, insurance)
-- [x] Phase 4 — Settings screen (scenario years, km/yr, opportunity cost rate)
-- [x] Phase 5 — Year-by-year cumulative cost chart (line chart, data table with cheapest highlights)
-- [x] Phase 6 — Vehicle detail view (donut chart breakdown, edit/delete from detail page)
-
-## Development
-
-No build step. Open `src/index.html` directly, or serve via any static file server:
-
+### Development
 ```bash
-npx serve src
+git clone https://github.com/banksiasprings/truecost.git
+cd truecost
+# Serve the src directory with any static file server
+python3 -m http.server 8000 --directory src
+# Open http://localhost:8000 in your browser
 ```
 
-## Deployment
+### Mobile APK
+Download the Android APK from [releases](https://github.com/banksiasprings/truecost/releases) to install as a native app.
 
-Deployed automatically to GitHub Pages via GitHub Actions on every push to `main`. See `.github/workflows/deploy.yml`.
+## 📊 Data
+
+The vehicle database includes:
+- 202 Australian vehicle presets
+- Latest pricing and specification data
+- Real-world fuel consumption figures
+- Current insurance and registration rates
+
+All calculations are based on publicly available Australian automotive data sources.
+
+## 📄 License
+
+MIT – See LICENSE file for details
+
+---
+
+**Found a bug or have a suggestion?** [Open an issue](https://github.com/banksiasprings/truecost/issues). **Want to contribute?** PRs welcome!
