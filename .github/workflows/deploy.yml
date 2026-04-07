@@ -29,7 +29,7 @@ jobs:
           sed -i "s/const CACHE_NAME = 'truecost-pro-v[^']*'/const CACHE_NAME = 'truecost-pro-${SHORT_SHA}'/" src/sw.js
           echo "Cache name set to truecost-pro-${SHORT_SHA}"
       - name: Upload artifact (src/ directory)
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: src/
       - name: Deploy to GitHub Pages
